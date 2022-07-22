@@ -1,18 +1,24 @@
 package org.example;
-import com.twilio.Twilio;
 import com.twilio.http.TwilioRestClient;
 import com.twilio.rest.api.v2010.account.Call;
 import com.twilio.rest.api.v2010.account.CallCreator;
-import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.twiml.VoiceResponse;
 import com.twilio.twiml.voice.Play;
 import com.twilio.twiml.voice.Say;
 import com.twilio.type.PhoneNumber;
 
-import java.net.URI;
 
-import static spark.Spark.get;
-import static spark.Spark.post;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
+import spark.Spark;
+
+import static spark.Spark.*;
+
 
 public class Main {
     static String accountSid = System.getenv("TWILIO_ACCOUNT_SID");
@@ -20,13 +26,37 @@ public class Main {
     static String twilioNumber = System.getenv("TWILIO_PHONE_NUMBER");
     static String NGROK_BASE_URL = System.getenv("NGROK_URL");
 
+
+    static private String renderContent(String htmlFile) {
+        try {
+            return new String(Files.readAllBytes(Paths.get(Main.class.getResource(htmlFile).toURI())), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    static int getHerokuAssignedPort() {
+        ProcessBuilder processBuilder = new ProcessBuilder();
+        if (processBuilder.environment().get("PORT") != null) {
+            return Integer.parseInt(processBuilder.environment().get("PORT"));
+        }
+        return 4567; //return default port if heroku-port isn't set (i.e. on localhost)
+    }
+
+
     public static void main(String[] args) {
+
+        port(getHerokuAssignedPort());
+
+
+        Helper helper = new Helper();
 
         // instantiate the TwilioRestClient helper library with our Twilio credentials set as constants
         TwilioRestClient client = new TwilioRestClient.Builder(accountSid, authToken).build();
 
-        // lets us know our app is up and running
-        get("/", (request, response) -> "Spark app up and running!");
+        Spark.staticFiles.location("/public");
 
         // twiml endpoint
         post("/twiml", (request, response) -> {
