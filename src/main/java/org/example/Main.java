@@ -57,15 +57,15 @@ public class Main {
         // twiml endpoint
         post("/twiml", (request, response) -> {
             // generate the TwiML response to tell Twilio what to do
-            Say sayHello = new Say.Builder("Hello from Twilio, Java 8 and Spark!").build();
+            Say sayHello = new Say.Builder("JAVA RC, JAVA RC, YES IT'S THE JAVA-RC, HURRAY FOR THE JAVA RC, LET'S GO JAVA RC").build();
             Play playSong = new Play.Builder("https://api.twilio.com/cowbell.mp3").build();
             VoiceResponse voiceResponse = new VoiceResponse.Builder().say(sayHello).play(playSong).build();
             return voiceResponse.toXml();
         });
 
         // this endpoint handles dialing outbound phone calls with the TwilioRestClient object
-        get("/dial-phone/:number", (request, response) -> {
-            String phoneNumber = request.params(":number");
+        get("/dial-phone", (request, response) -> {
+            String phoneNumber = request.queryParams("number");//request.params(":number");
             /* as long as the phone number is not blank or null, we'll attempt to dial it, but
                you can add more exception handling here */
             if (!phoneNumber.isEmpty()) {
