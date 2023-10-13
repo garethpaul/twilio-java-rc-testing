@@ -47,7 +47,7 @@
             <groupId>com.twilio.sdk</groupId>
             <artifactId>twilio</artifactId>
             <!--<version>8.34.0</version>-->
-            <version>9.0.0-rc.1</version>
+            <version>9.6.1</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
