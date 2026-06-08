@@ -29,6 +29,19 @@ public class MainTest {
     }
 
     @Test
+    public void dryRunConfigurationDoesNotRequireTwilioCredentials() {
+        assertNull(Main.callConfigurationError(null, "", "+123456", "https://example.ngrok.io", false));
+    }
+
+    @Test
+    public void liveConfigurationRequiresTwilioCredentials() {
+        assertEquals(
+                "Missing required configuration: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN",
+                Main.callConfigurationError(null, "", "+123456", "https://example.ngrok.io", true)
+        );
+    }
+
+    @Test
     public void rejectsInvalidConfiguredTwilioNumber() {
         assertEquals(
                 "TWILIO_PHONE_NUMBER must be a valid E.164 phone number",
@@ -53,5 +66,25 @@ public class MainTest {
     public void buildsTwimlUriWithSingleSlash() {
         URI uri = Main.twimlUri("https://example.ngrok.io/");
         assertEquals("https://example.ngrok.io/twiml", uri.toString());
+    }
+
+    @Test
+    public void liveSendFlagRequiresExplicitTrue() {
+        assertFalse(Main.shouldSendLive(null));
+        assertFalse(Main.shouldSendLive(""));
+        assertFalse(Main.shouldSendLive("false"));
+        assertTrue(Main.shouldSendLive(" TRUE "));
+    }
+
+    @Test
+    public void describesDryRunAndLiveDialMessages() {
+        assertEquals(
+                "Dry run: would dial +123456 from your Twilio phone number...",
+                Main.dialMessage("+123456", true)
+        );
+        assertEquals(
+                "Dialing +123456 from your Twilio phone number...",
+                Main.dialMessage("+123456", false)
+        );
     }
 }

@@ -27,6 +27,7 @@ public class Main {
     static String authToken = System.getenv("TWILIO_AUTH_TOKEN");
     static String twilioNumber = System.getenv("TWILIO_PHONE_NUMBER");
     static String NGROK_BASE_URL = System.getenv("NGROK_URL");
+    static String TWILIO_SEND_LIVE = System.getenv("TWILIO_SEND_LIVE");
     private static final Pattern E164_PHONE_NUMBER = Pattern.compile("^\\+[1-9]\\d{1,14}$");
 
 
@@ -53,11 +54,21 @@ public class Main {
     }
 
     static String callConfigurationError(String accountSid, String authToken, String twilioNumber, String ngrokBaseUrl) {
+        return callConfigurationError(accountSid, authToken, twilioNumber, ngrokBaseUrl, true);
+    }
+
+    static String callConfigurationError(
+            String accountSid,
+            String authToken,
+            String twilioNumber,
+            String ngrokBaseUrl,
+            boolean sendLive
+    ) {
         List<String> missing = new ArrayList<>();
-        if (isBlank(accountSid)) {
+        if (sendLive && isBlank(accountSid)) {
             missing.add("TWILIO_ACCOUNT_SID");
         }
-        if (isBlank(authToken)) {
+        if (sendLive && isBlank(authToken)) {
             missing.add("TWILIO_AUTH_TOKEN");
         }
         if (isBlank(twilioNumber)) {
@@ -76,6 +87,17 @@ public class Main {
             return "NGROK_URL must start with https://";
         }
         return null;
+    }
+
+    static boolean shouldSendLive(String value) {
+        return value != null && value.trim().equalsIgnoreCase("true");
+    }
+
+    static String dialMessage(String phoneNumber, boolean dryRun) {
+        if (dryRun) {
+            return "Dry run: would dial " + phoneNumber.trim() + " from your Twilio phone number...";
+        }
+        return "Dialing " + phoneNumber.trim() + " from your Twilio phone number...";
     }
 
     static URI twimlUri(String ngrokBaseUrl) {
@@ -113,10 +135,21 @@ public class Main {
                 return "Hey, you need to enter a valid E.164 phone number in the URL!";
             }
 
-            String configurationError = callConfigurationError(accountSid, authToken, twilioNumber, NGROK_BASE_URL);
+            boolean sendLive = shouldSendLive(TWILIO_SEND_LIVE);
+            String configurationError = callConfigurationError(
+                    accountSid,
+                    authToken,
+                    twilioNumber,
+                    NGROK_BASE_URL,
+                    sendLive
+            );
             if (configurationError != null) {
                 response.status(503);
                 return configurationError;
+            }
+
+            if (!sendLive) {
+                return dialMessage(phoneNumber, true);
             }
 
             PhoneNumber to = new PhoneNumber(phoneNumber.trim());
@@ -126,7 +159,7 @@ public class Main {
 
             // Make the call using the TwilioRestClient we instantiated
             new CallCreator(to, from, uri).create(client);
-            return "Dialing " + phoneNumber.trim() + " from your Twilio phone number...";
+            return dialMessage(phoneNumber, false);
         });
     }
 }

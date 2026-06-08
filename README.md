@@ -42,9 +42,12 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 
 ## Running or Using the Project
 
-- Configure `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`, and `NGROK_URL`.
+- Configure `TWILIO_PHONE_NUMBER` and `NGROK_URL` for dry-run testing.
+  Configure `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and
+  `TWILIO_SEND_LIVE=true` only when intentionally placing live calls.
 - Run `mvn package` and then `java -jar target/Testing1234-1.0-jar-with-dependencies.jar`.
-- Open `/` and submit a valid E.164 phone number. The app rejects missing or malformed numbers before attempting a Twilio call.
+- Open `/` and submit a valid E.164 phone number. The app rejects missing or
+  malformed numbers before a dry run or live Twilio call.
 
 ## Testing and Verification
 

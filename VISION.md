@@ -20,10 +20,10 @@ Priority:
 - Maintain `make check` and Maven packaging for a runnable jar
 - Treat outbound call creation as a live side effect
 - Validate phone numbers and required callback configuration before dialing
+- Keep outbound calls in dry-run mode unless explicitly enabled
 
 Next priorities:
 
-- Add an explicit dry-run mode for the outbound call endpoint
 - Add integration-test coverage around Spark routes
 - Add a mock Twilio client path for local tests
 - Document supported Java, Maven, and Twilio SDK versions
