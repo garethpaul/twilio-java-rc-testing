@@ -42,11 +42,15 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 
 ## Running or Using the Project
 
-- No single runtime entry point was identified. Start by reading the source files and manifests listed above.
+- Configure `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`, and `NGROK_URL`.
+- Run `mvn package` and then `java -jar target/Testing1234-1.0-jar-with-dependencies.jar`.
+- Open `/` and submit a valid E.164 phone number. The app rejects missing or malformed numbers before attempting a Twilio call.
 
 ## Testing and Verification
 
-- No dedicated automated test command was identified from the checked-in files. Verify changes by running the relevant build or manually exercising the sample.
+- `make check`
+- `mvn test`
+- `mvn -DskipTests package`
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 

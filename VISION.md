@@ -17,13 +17,14 @@ Priority:
 
 - Preserve the Spark server and `/twiml` plus `/dial-phone` flow
 - Keep account credentials and phone numbers in environment variables
-- Maintain Maven packaging for a runnable jar
+- Maintain `make check` and Maven packaging for a runnable jar
 - Treat outbound call creation as a live side effect
+- Validate phone numbers and required callback configuration before dialing
 
 Next priorities:
 
-- Align README environment variable names with the Java code
-- Validate phone-number input before placing calls
+- Add an explicit dry-run mode for the outbound call endpoint
+- Add integration-test coverage around Spark routes
 - Add a mock Twilio client path for local tests
 - Document supported Java, Maven, and Twilio SDK versions
 
