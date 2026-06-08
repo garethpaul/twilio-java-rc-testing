@@ -40,7 +40,6 @@ Canonical security policy and reporting:
 
 - [`SECURITY.md`](SECURITY.md)
 
-
 This sample can place real outbound calls. It should validate inputs, keep
 credentials out of source control, avoid exposing callback URLs unnecessarily,
 and make costs and account effects clear.
