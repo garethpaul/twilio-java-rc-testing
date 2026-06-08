@@ -1,5 +1,8 @@
 # Getting Started
 
+<!-- README-OVERVIEW-IMAGE -->
+![Project overview](docs/readme-overview.svg)
+
 You'll need to setup environment variables for the items detailed in the Main Class.
 
 ```aidl
