@@ -1,5 +1,8 @@
 # twilio-java-rc-testing
 
+<!-- README-OVERVIEW-IMAGE -->
+![Project overview](docs/readme-overview.svg)
+
 ## Overview
 
 `garethpaul/twilio-java-rc-testing` is a static web project. Twilio Java RC Testing
@@ -72,4 +75,3 @@ Keep changes small and tied to the project that is already present in this repos
 Prior README summary:
 
 > Getting Started <!-- README-OVERVIEW-IMAGE --> You'll need to setup environment variables for the items detailed in the Main Class. Compiling and Running ``mvn clean install`` ``java -jar target/Testing1234-1.0-jar-with-dependencies.jar ``
-
