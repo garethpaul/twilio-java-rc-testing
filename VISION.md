@@ -46,3 +46,6 @@ and make costs and account effects clear.
 - Unvalidated public call endpoints
 - Live-call defaults without operator confirmation
 - Dependency changes that obscure the RC test purpose
+
+This list is a roadmap guardrail, not a permanent rule.
+Strong user demand and strong technical rationale can change it.
