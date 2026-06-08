@@ -40,7 +40,7 @@ This sample can place real outbound calls. It should validate inputs, keep
 credentials out of source control, avoid exposing callback URLs unnecessarily,
 and make costs and account effects clear.
 
-## What We Will Not Merge For Now
+## What We Will Not Merge (For Now)
 
 - Checked-in credentials, phone numbers, or callback URLs
 - Unvalidated public call endpoints
