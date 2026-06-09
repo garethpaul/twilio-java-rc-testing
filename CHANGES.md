@@ -2,6 +2,9 @@
 
 ## 2026-06-09
 
+- Added safe `PORT` parsing so invalid or out-of-range assigned ports fall
+  back to the local default instead of crashing startup.
+- Added JUnit coverage for missing, valid, malformed, and zero `PORT` values.
 - Added parseable HTTPS callback URL validation for `NGROK_URL`.
 - Added JUnit coverage for malformed and insecure callback URL values.
 

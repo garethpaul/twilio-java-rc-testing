@@ -6,6 +6,8 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -21,6 +23,21 @@ public class MainTest {
         assertFalse(Main.isValidPhoneNumber("   "));
         assertFalse(Main.isValidPhoneNumber("123456"));
         assertFalse(Main.isValidPhoneNumber("+12abc"));
+    }
+
+    @Test
+    public void defaultsInvalidAssignedPorts() {
+        Map<String, String> env = new HashMap<>();
+        assertEquals(4567, Main.portFromEnv(env));
+
+        env.put("PORT", " 5000 ");
+        assertEquals(5000, Main.portFromEnv(env));
+
+        env.put("PORT", "not-a-port");
+        assertEquals(4567, Main.portFromEnv(env));
+
+        env.put("PORT", "0");
+        assertEquals(4567, Main.portFromEnv(env));
     }
 
     @Test

@@ -46,6 +46,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   Configure `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and
   `TWILIO_SEND_LIVE=true` only when intentionally placing live calls.
 - Run `mvn package` and then `java -jar target/Testing1234-1.0-jar-with-dependencies.jar`.
+- The server uses `PORT` when it is a valid positive port number and otherwise
+  falls back to `4567` for local runs.
 - Open `/` and submit a valid E.164 phone number. The app rejects missing or
   malformed numbers before a dry run or live Twilio call.
 - `NGROK_URL` must be a valid HTTPS URL with a host before the app builds a
@@ -63,6 +65,7 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - Tests keep the checked-in Log4j default at `info` rather than `debug`.
 - Tests cover TwiML XML generation and the `/twiml` content type contract.
 - Tests cover HTTPS callback URL validation before live-call setup.
+- Tests cover safe `PORT` parsing before Spark starts.
 - Completed maintenance plans live under `docs/plans` and are checked by
   `make check`.
 
@@ -89,6 +92,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   contract.
 - See `docs/plans/2026-06-09-callback-url-validation.md` for HTTPS callback
   URL validation coverage.
+- See `docs/plans/2026-06-09-port-parsing.md` for safe assigned-port parsing
+  coverage.
 
 ## Contributing
 

@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import spark.Spark;
@@ -42,11 +43,23 @@ public class Main {
     }
 
     static int getHerokuAssignedPort() {
-        ProcessBuilder processBuilder = new ProcessBuilder();
-        if (processBuilder.environment().get("PORT") != null) {
-            return Integer.parseInt(processBuilder.environment().get("PORT"));
+        return portFromEnv(new ProcessBuilder().environment());
+    }
+
+    static int portFromEnv(Map<String, String> env) {
+        String value = env.get("PORT");
+        if (isBlank(value)) {
+            return 4567;
         }
-        return 4567; //return default port if heroku-port isn't set (i.e. on localhost)
+        try {
+            int port = Integer.parseInt(value.trim());
+            if (port > 0 && port <= 65535) {
+                return port;
+            }
+        } catch (NumberFormatException numberFormatException) {
+            return 4567;
+        }
+        return 4567;
     }
 
     static boolean isValidPhoneNumber(String phoneNumber) {
