@@ -14,6 +14,7 @@ This README is based on the checked-in source, manifests, scripts, and repositor
 - `README.md` - project overview and local usage notes
 - `pom.xml`
 - `Procfile`
+- `scripts/check-baseline.sh` - repository maintenance baseline guard
 - `SECURITY.md` - security reporting and disclosure guidance
 - `src` - source or example code
 - `VISION.md` - project direction and maintenance guardrails
@@ -63,8 +64,11 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 ## Testing and Verification
 
 - `make check`
+- `scripts/check-baseline.sh`
 - `mvn test`
 - `mvn -DskipTests package`
+- The baseline script checks required project files, completed docs-plan
+  metadata, and local editor metadata hygiene.
 - Tests keep the checked-in Log4j default at `info` rather than `debug`.
 - Tests cover TwiML XML generation and the `/twiml` content type contract.
 - Tests cover HTTPS origin callback URL validation before live-call setup.
@@ -114,6 +118,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   invalid dial-target error coverage.
 - See `docs/plans/2026-06-09-ide-metadata-ignore.md` for local IDE metadata
   ignore coverage.
+- See `docs/plans/2026-06-09-scripted-baseline-check.md` for the scripted
+  repository baseline guard.
 
 ## Contributing
 

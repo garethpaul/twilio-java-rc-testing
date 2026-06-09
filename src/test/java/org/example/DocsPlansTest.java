@@ -21,6 +21,7 @@ public class DocsPlansTest {
     private static final Path POST_DIAL_PLAN = DOCS_PLANS.resolve("2026-06-09-post-dial-route.md");
     private static final Path POST_INVALID_DIAL_PLAN = DOCS_PLANS.resolve("2026-06-09-post-invalid-dial-target.md");
     private static final Path IDE_METADATA_PLAN = DOCS_PLANS.resolve("2026-06-09-ide-metadata-ignore.md");
+    private static final Path SCRIPTED_BASELINE_PLAN = DOCS_PLANS.resolve("2026-06-09-scripted-baseline-check.md");
 
     @Test
     public void canonicalPlanIsCompletedAndVerified() throws IOException {
@@ -38,6 +39,7 @@ public class DocsPlansTest {
         assertTrue("POST dial route plan must exist", plans.contains(POST_DIAL_PLAN));
         assertTrue("POST invalid dial target plan must exist", plans.contains(POST_INVALID_DIAL_PLAN));
         assertTrue("IDE metadata ignore plan must exist", plans.contains(IDE_METADATA_PLAN));
+        assertTrue("scripted baseline plan must exist", plans.contains(SCRIPTED_BASELINE_PLAN));
 
         for (Path plan : plans) {
             String text = new String(Files.readAllBytes(plan), StandardCharsets.UTF_8);
@@ -52,5 +54,12 @@ public class DocsPlansTest {
 
         assertTrue("IntelliJ project directories must be ignored", gitignore.contains(".idea/"));
         assertFalse("ignore rules should not only cover one local IntelliJ file", gitignore.contains(".idea/workspace.xml"));
+    }
+
+    @Test
+    public void checkGateRunsScriptedBaseline() throws IOException {
+        String makefile = new String(Files.readAllBytes(REPO_ROOT.resolve("Makefile")), StandardCharsets.UTF_8);
+
+        assertTrue("make check must run the scripted baseline guard", makefile.contains("scripts/check-baseline.sh"));
     }
 }

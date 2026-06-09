@@ -4,6 +4,8 @@
 
 - Removed tracked IntelliJ `.idea` metadata and added JUnit coverage for the
   broad local IDE ignore rule.
+- Added `scripts/check-baseline.sh` to keep required files, completed plan
+  metadata, and editor metadata hygiene wired into `make check`.
 - Removed stale URL wording from invalid dial-target errors now that
   `/dial-phone` is POST-only.
 - Marked the POST form phone number input as required with JUnit coverage.
