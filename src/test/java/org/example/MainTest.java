@@ -155,13 +155,26 @@ public class MainTest {
     @Test
     public void describesDryRunAndLiveDialMessages() {
         assertEquals(
-                "Dry run: would dial +123456 from your Twilio phone number...",
+                "Dry run: would dial ***3456 from your Twilio phone number...",
                 Main.dialMessage("+123456", true)
         );
         assertEquals(
-                "Dialing +123456 from your Twilio phone number...",
+                "Dialing ***3456 from your Twilio phone number...",
                 Main.dialMessage("+123456", false)
         );
+    }
+
+    @Test
+    public void redactsDialTargetsInDryRunMessages() {
+        String message = Main.dialMessage("+1234567890", true);
+
+        assertFalse(message.contains("+1234567890"));
+        assertTrue(message.contains("******7890"));
+    }
+
+    @Test
+    public void redactsShortDialTargets() {
+        assertEquals("****", Main.redactPhoneNumber("+123"));
     }
 
     @Test

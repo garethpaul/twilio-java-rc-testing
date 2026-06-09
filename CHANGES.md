@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Redacted dial targets in dry-run and live response messages with JUnit
+  coverage.
 - Tightened `NGROK_URL` validation to require an HTTPS origin without path,
   query, fragment, or userinfo before building the TwiML callback URL.
 - Added JUnit coverage for callback origin URL edge cases.

@@ -107,10 +107,27 @@ public class Main {
     }
 
     static String dialMessage(String phoneNumber, boolean dryRun) {
+        String redactedPhoneNumber = redactPhoneNumber(phoneNumber);
         if (dryRun) {
-            return "Dry run: would dial " + phoneNumber.trim() + " from your Twilio phone number...";
+            return "Dry run: would dial " + redactedPhoneNumber + " from your Twilio phone number...";
         }
-        return "Dialing " + phoneNumber.trim() + " from your Twilio phone number...";
+        return "Dialing " + redactedPhoneNumber + " from your Twilio phone number...";
+    }
+
+    static String redactPhoneNumber(String phoneNumber) {
+        String value = phoneNumber == null ? "" : phoneNumber.trim();
+        if (value.length() <= 4) {
+            return "****";
+        }
+        return repeat("*", value.length() - 4) + value.substring(value.length() - 4);
+    }
+
+    private static String repeat(String value, int count) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < count; i++) {
+            builder.append(value);
+        }
+        return builder.toString();
     }
 
     static URI twimlUri(String ngrokBaseUrl) {
