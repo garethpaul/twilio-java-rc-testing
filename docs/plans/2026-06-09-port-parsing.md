@@ -19,7 +19,8 @@ throw before the server started instead of falling back to the local default.
 
 - Added `portFromEnv(Map<String, String>)` for testable port parsing.
 - Updated `getHerokuAssignedPort()` to delegate to the safe helper.
-- Added JUnit coverage for missing, valid, malformed, and zero `PORT` values.
+- Added JUnit coverage for missing, valid, malformed, zero, and out-of-range
+  `PORT` values.
 - Updated README, VISION, and CHANGES with the deployment guard.
 
 ## Verification

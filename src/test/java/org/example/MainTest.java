@@ -38,6 +38,12 @@ public class MainTest {
 
         env.put("PORT", "0");
         assertEquals(4567, Main.portFromEnv(env));
+
+        env.put("PORT", "-1");
+        assertEquals(4567, Main.portFromEnv(env));
+
+        env.put("PORT", "65536");
+        assertEquals(4567, Main.portFromEnv(env));
     }
 
     @Test
