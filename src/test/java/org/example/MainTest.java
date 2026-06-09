@@ -55,14 +55,36 @@ public class MainTest {
     @Test
     public void rejectsInsecureCallbackBaseUrl() {
         assertEquals(
-                "NGROK_URL must start with https://",
+                "NGROK_URL must be a valid https URL",
                 Main.callConfigurationError("sid", "token", "+123456", "http://example.ngrok.io")
+        );
+    }
+
+    @Test
+    public void rejectsMalformedCallbackBaseUrl() {
+        assertEquals(
+                "NGROK_URL must be a valid https URL",
+                Main.callConfigurationError("sid", "token", "+123456", "https://")
+        );
+        assertEquals(
+                "NGROK_URL must be a valid https URL",
+                Main.callConfigurationError("sid", "token", "+123456", "not a url")
         );
     }
 
     @Test
     public void acceptsCompleteCallConfiguration() {
         assertNull(Main.callConfigurationError("sid", "token", "+123456", "https://example.ngrok.io"));
+    }
+
+    @Test
+    public void validatesCallbackBaseUrls() {
+        assertTrue(Main.isValidCallbackBaseUrl(" https://example.ngrok.io "));
+        assertFalse(Main.isValidCallbackBaseUrl(null));
+        assertFalse(Main.isValidCallbackBaseUrl(""));
+        assertFalse(Main.isValidCallbackBaseUrl("https://"));
+        assertFalse(Main.isValidCallbackBaseUrl("http://example.ngrok.io"));
+        assertFalse(Main.isValidCallbackBaseUrl("not a url"));
     }
 
     @Test

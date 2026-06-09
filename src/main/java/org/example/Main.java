@@ -83,8 +83,8 @@ public class Main {
         if (!isValidPhoneNumber(twilioNumber)) {
             return "TWILIO_PHONE_NUMBER must be a valid E.164 phone number";
         }
-        if (!ngrokBaseUrl.trim().startsWith("https://")) {
-            return "NGROK_URL must start with https://";
+        if (!isValidCallbackBaseUrl(ngrokBaseUrl)) {
+            return "NGROK_URL must be a valid https URL";
         }
         return null;
     }
@@ -106,6 +106,18 @@ public class Main {
             trimmed = trimmed.substring(0, trimmed.length() - 1);
         }
         return URI.create(trimmed + "/twiml");
+    }
+
+    static boolean isValidCallbackBaseUrl(String ngrokBaseUrl) {
+        if (isBlank(ngrokBaseUrl)) {
+            return false;
+        }
+        try {
+            URI uri = new URI(ngrokBaseUrl.trim());
+            return "https".equalsIgnoreCase(uri.getScheme()) && !isBlank(uri.getHost());
+        } catch (URISyntaxException uriSyntaxException) {
+            return false;
+        }
     }
 
     static String twimlResponseXml() {

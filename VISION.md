@@ -20,6 +20,7 @@ Priority:
 - Maintain `make check` and Maven packaging for a runnable jar
 - Treat outbound call creation as a live side effect
 - Validate phone numbers and required callback configuration before dialing
+- Require callback base URLs to be parseable HTTPS URLs
 - Keep outbound calls in dry-run mode unless explicitly enabled
 - Keep TwiML callback responses explicit and testable
 - Keep checked-in runtime logging at info by default
@@ -52,6 +53,7 @@ and make costs and account effects clear.
 
 - Checked-in credentials, phone numbers, or callback URLs
 - Unvalidated public call endpoints
+- Malformed callback URLs that fail after call setup begins
 - Live-call defaults without operator confirmation
 - Dependency changes that obscure the RC test purpose
 

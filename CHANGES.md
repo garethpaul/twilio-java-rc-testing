@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-09
+
+- Added parseable HTTPS callback URL validation for `NGROK_URL`.
+- Added JUnit coverage for malformed and insecure callback URL values.
+
 ## 2026-06-08
 
 - Added TwiML response generation tests and an explicit XML content type for
