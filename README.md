@@ -50,7 +50,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   falls back to `4567` for local runs.
 - Open `/` and submit a valid E.164 phone number. The form posts to
   `/dial-phone`; the app rejects missing or malformed numbers before a dry run
-  or live Twilio call, and response messages redact dial targets.
+  or live Twilio call, response messages redact dial targets, and invalid
+  dial-target errors refer to the form submission rather than URL input. The
+  checked-in form marks the phone number field as required before submission.
 - `NGROK_URL` must be a valid HTTPS origin URL with a host, without path,
   query, fragment, or userinfo, before the app builds a TwiML callback URL.
 - The `/twiml` route returns TwiML XML with an explicit `application/xml`
@@ -70,6 +72,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - Tests cover dial-target redaction in response messages.
 - Tests keep the live-call-capable `/dial-phone` endpoint and form submission
   on POST rather than GET.
+- Tests keep invalid dial-target errors and required phone input aligned with
+  the POST form flow.
 - Completed maintenance plans live under `docs/plans` and are checked by
   `make check`.
 
@@ -104,6 +108,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   redaction coverage.
 - See `docs/plans/2026-06-09-post-dial-route.md` for POST-only dial route
   coverage.
+- See `docs/plans/2026-06-09-post-invalid-dial-target.md` for POST-aligned
+  invalid dial-target error coverage.
 
 ## Contributing
 

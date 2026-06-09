@@ -19,6 +19,7 @@ public class DocsPlansTest {
     private static final Path DOCS_PLANS = REPO_ROOT.resolve("docs").resolve("plans");
     private static final Path CANONICAL_PLAN = DOCS_PLANS.resolve("2026-06-08-twilio-java-rc-testing-baseline.md");
     private static final Path POST_DIAL_PLAN = DOCS_PLANS.resolve("2026-06-09-post-dial-route.md");
+    private static final Path POST_INVALID_DIAL_PLAN = DOCS_PLANS.resolve("2026-06-09-post-invalid-dial-target.md");
 
     @Test
     public void canonicalPlanIsCompletedAndVerified() throws IOException {
@@ -34,6 +35,7 @@ public class DocsPlansTest {
         assertFalse("docs/plans must contain markdown plans", plans.isEmpty());
         assertTrue("canonical baseline plan must exist", plans.contains(CANONICAL_PLAN));
         assertTrue("POST dial route plan must exist", plans.contains(POST_DIAL_PLAN));
+        assertTrue("POST invalid dial target plan must exist", plans.contains(POST_INVALID_DIAL_PLAN));
 
         for (Path plan : plans) {
             String text = new String(Files.readAllBytes(plan), StandardCharsets.UTF_8);

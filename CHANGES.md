@@ -2,6 +2,9 @@
 
 ## 2026-06-09
 
+- Removed stale URL wording from invalid dial-target errors now that
+  `/dial-phone` is POST-only.
+- Marked the POST form phone number input as required with JUnit coverage.
 - Changed the live-call-capable `/dial-phone` action and form submission from
   GET to POST.
 - Added JUnit source-contract coverage so the dial route and form stay POST.

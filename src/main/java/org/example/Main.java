@@ -114,6 +114,10 @@ public class Main {
         return "Dialing " + redactedPhoneNumber + " from your Twilio phone number...";
     }
 
+    static String invalidDialTargetMessage() {
+        return "Hey, you need to enter a valid E.164 phone number.";
+    }
+
     static String redactPhoneNumber(String phoneNumber) {
         String value = phoneNumber == null ? "" : phoneNumber.trim();
         if (value.length() <= 4) {
@@ -195,7 +199,7 @@ public class Main {
             String phoneNumber = request.queryParams("number");//request.params(":number");
             if (!isValidPhoneNumber(phoneNumber)) {
                 response.status(400);
-                return "Hey, you need to enter a valid E.164 phone number in the URL!";
+                return invalidDialTargetMessage();
             }
 
             boolean sendLive = shouldSendLive(TWILIO_SEND_LIVE);

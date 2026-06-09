@@ -167,6 +167,19 @@ public class MainTest {
     }
 
     @Test
+    public void dialPhoneFormRequiresPhoneNumber() throws Exception {
+        String html = new String(
+                Files.readAllBytes(Paths.get("src/main/resources/public/index.html")),
+                StandardCharsets.UTF_8
+        );
+
+        assertTrue(html.contains(
+                "id=\"number\" name=\"number\" placeholder=\"+ country code and number\" "
+                        + "pattern=\"^\\+[1-9][0-9]{1,14}$\" required"
+        ));
+    }
+
+    @Test
     public void liveSendFlagRequiresExplicitTrue() {
         assertFalse(Main.shouldSendLive(null));
         assertFalse(Main.shouldSendLive(""));
@@ -197,6 +210,20 @@ public class MainTest {
     @Test
     public void redactsShortDialTargets() {
         assertEquals("****", Main.redactPhoneNumber("+123"));
+    }
+
+    @Test
+    public void invalidDialTargetMessageMatchesPostFormSubmission() throws Exception {
+        assertEquals(
+                "Hey, you need to enter a valid E.164 phone number.",
+                Main.invalidDialTargetMessage()
+        );
+
+        String source = new String(
+                Files.readAllBytes(Paths.get("src/main/java/org/example/Main.java")),
+                StandardCharsets.UTF_8
+        );
+        assertFalse(source.contains("in the URL"));
     }
 
     @Test

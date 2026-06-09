@@ -23,6 +23,8 @@ Priority:
 - Validate phone numbers and required callback configuration before dialing
 - Redact dial targets in response messages
 - Keep live-call-capable dial actions behind POST form submissions
+- Keep invalid dial-target errors aligned with POST form submissions
+- Keep the POST form phone input required before submission
 - Require callback base URLs to be parseable HTTPS origins
 - Keep outbound calls in dry-run mode unless explicitly enabled
 - Keep TwiML callback responses explicit and testable
