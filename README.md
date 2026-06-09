@@ -80,6 +80,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   the POST form flow.
 - Tests keep local IntelliJ `.idea/` metadata ignored and out of the portable
   sample.
+- Tests keep unused legacy Apache Spark Streaming, Velocity, and WebJars
+  declarations out of the Maven build.
 - Completed maintenance plans live under `docs/plans` and are checked by
   `make check`.
 
@@ -120,6 +122,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   ignore coverage.
 - See `docs/plans/2026-06-09-scripted-baseline-check.md` for the scripted
   repository baseline guard.
+- See `docs/plans/2026-06-09-unused-legacy-dependencies.md` for unused Maven
+  dependency cleanup coverage.
 
 ## Contributing
 

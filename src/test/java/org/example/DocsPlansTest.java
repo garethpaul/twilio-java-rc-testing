@@ -22,6 +22,7 @@ public class DocsPlansTest {
     private static final Path POST_INVALID_DIAL_PLAN = DOCS_PLANS.resolve("2026-06-09-post-invalid-dial-target.md");
     private static final Path IDE_METADATA_PLAN = DOCS_PLANS.resolve("2026-06-09-ide-metadata-ignore.md");
     private static final Path SCRIPTED_BASELINE_PLAN = DOCS_PLANS.resolve("2026-06-09-scripted-baseline-check.md");
+    private static final Path UNUSED_DEPENDENCIES_PLAN = DOCS_PLANS.resolve("2026-06-09-unused-legacy-dependencies.md");
 
     @Test
     public void canonicalPlanIsCompletedAndVerified() throws IOException {
@@ -40,6 +41,7 @@ public class DocsPlansTest {
         assertTrue("POST invalid dial target plan must exist", plans.contains(POST_INVALID_DIAL_PLAN));
         assertTrue("IDE metadata ignore plan must exist", plans.contains(IDE_METADATA_PLAN));
         assertTrue("scripted baseline plan must exist", plans.contains(SCRIPTED_BASELINE_PLAN));
+        assertTrue("unused dependency cleanup plan must exist", plans.contains(UNUSED_DEPENDENCIES_PLAN));
 
         for (Path plan : plans) {
             String text = new String(Files.readAllBytes(plan), StandardCharsets.UTF_8);

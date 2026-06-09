@@ -27,6 +27,7 @@ Priority:
 - Keep live-call-capable dial actions behind POST form submissions
 - Keep invalid dial-target errors aligned with POST form submissions
 - Keep the POST form phone input required before submission
+- Keep unused legacy dependencies out of the live-call sample package
 - Require callback base URLs to be parseable HTTPS origins
 - Keep outbound calls in dry-run mode unless explicitly enabled
 - Keep TwiML callback responses explicit and testable
@@ -62,6 +63,7 @@ and make costs and account effects clear.
 - Unvalidated public call endpoints
 - Malformed callback URLs that fail after call setup begins
 - Live-call defaults without operator confirmation
+- Unused legacy dependencies that expand the sample runtime surface
 - Dependency changes that obscure the RC test purpose
 
 This list is a roadmap guardrail, not a permanent rule.

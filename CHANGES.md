@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Removed unused Apache Spark Streaming, Velocity, and WebJars declarations from
+  the Maven build with JUnit source-contract coverage.
 - Removed tracked IntelliJ `.idea` metadata and added JUnit coverage for the
   broad local IDE ignore rule.
 - Added `scripts/check-baseline.sh` to keep required files, completed plan

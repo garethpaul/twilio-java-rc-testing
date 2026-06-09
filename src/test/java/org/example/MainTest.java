@@ -236,4 +236,16 @@ public class MainTest {
         assertTrue(properties.contains("log4j.rootLogger=info, stdout"));
         assertFalse(properties.contains("log4j.rootLogger=debug, stdout"));
     }
+
+    @Test
+    public void pomDoesNotIncludeUnusedLegacyDependencies() throws Exception {
+        String pom = new String(
+                Files.readAllBytes(Paths.get("pom.xml")),
+                StandardCharsets.UTF_8
+        );
+
+        assertFalse(pom.contains("<artifactId>spark-streaming_2.10</artifactId>"));
+        assertFalse(pom.contains("<artifactId>velocity</artifactId>"));
+        assertFalse(pom.contains("webjars-"));
+    }
 }
