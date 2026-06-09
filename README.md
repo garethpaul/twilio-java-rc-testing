@@ -48,6 +48,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - Run `mvn package` and then `java -jar target/Testing1234-1.0-jar-with-dependencies.jar`.
 - Open `/` and submit a valid E.164 phone number. The app rejects missing or
   malformed numbers before a dry run or live Twilio call.
+- The `/twiml` route returns TwiML XML with an explicit `application/xml`
+  content type.
 - Runtime logging defaults to `info`; switch to debug only in a local working
   copy when you are prepared to redact call metadata before sharing logs.
 
@@ -57,6 +59,7 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - `mvn test`
 - `mvn -DskipTests package`
 - Tests keep the checked-in Log4j default at `info` rather than `debug`.
+- Tests cover TwiML XML generation and the `/twiml` content type contract.
 - Completed maintenance plans live under `docs/plans` and are checked by
   `make check`.
 
@@ -79,6 +82,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - See `VISION.md` for project direction and contribution guardrails.
 - See `docs/plans/2026-06-08-twilio-java-rc-testing-baseline.md` for the
   canonical dry-run dialing and verification baseline.
+- See `docs/plans/2026-06-08-twiml-content-type.md` for the TwiML XML response
+  contract.
 
 ## Contributing
 

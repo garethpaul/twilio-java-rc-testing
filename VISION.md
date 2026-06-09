@@ -21,6 +21,7 @@ Priority:
 - Treat outbound call creation as a live side effect
 - Validate phone numbers and required callback configuration before dialing
 - Keep outbound calls in dry-run mode unless explicitly enabled
+- Keep TwiML callback responses explicit and testable
 - Keep checked-in runtime logging at info by default
 
 Next priorities:

@@ -72,6 +72,25 @@ public class MainTest {
     }
 
     @Test
+    public void buildsTwimlXmlResponse() {
+        String xml = Main.twimlResponseXml();
+
+        assertTrue(xml.contains("<Response>"));
+        assertTrue(xml.contains("<Say>JAVA RC"));
+        assertTrue(xml.contains("https://api.twilio.com/cowbell.mp3"));
+    }
+
+    @Test
+    public void twimlRouteDeclaresXmlContentType() throws Exception {
+        String source = new String(
+                Files.readAllBytes(Paths.get("src/main/java/org/example/Main.java")),
+                StandardCharsets.UTF_8
+        );
+
+        assertTrue(source.contains("response.type(\"application/xml\");"));
+    }
+
+    @Test
     public void liveSendFlagRequiresExplicitTrue() {
         assertFalse(Main.shouldSendLive(null));
         assertFalse(Main.shouldSendLive(""));

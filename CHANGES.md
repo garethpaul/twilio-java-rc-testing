@@ -2,6 +2,8 @@
 
 ## 2026-06-08
 
+- Added TwiML response generation tests and an explicit XML content type for
+  `/twiml`.
 - Changed the checked-in Log4j root logger from `debug` to `info`, with JUnit
   coverage to keep verbose logging opt-in.
 - Added canonical `docs/plans` coverage to the Maven test gate.

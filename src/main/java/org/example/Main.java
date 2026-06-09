@@ -108,6 +108,20 @@ public class Main {
         return URI.create(trimmed + "/twiml");
     }
 
+    static String twimlResponseXml() {
+        Say sayHello = new Say.Builder(
+                "JAVA RC, JAVA RC, YES IT'S THE JAVA-RC, HURRAY FOR THE JAVA RC, LET'S GO JAVA RC"
+        ).build();
+        Play playSong = new Play.Builder(
+                "https://api.twilio.com/cowbell.mp3"
+        ).build();
+        VoiceResponse voiceResponse = new VoiceResponse.Builder()
+                .say(sayHello)
+                .play(playSong)
+                .build();
+        return voiceResponse.toXml();
+    }
+
     private static boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
     }
@@ -120,11 +134,8 @@ public class Main {
 
         // twiml endpoint
         post("/twiml", (request, response) -> {
-            // generate the TwiML response to tell Twilio what to do
-            Say sayHello = new Say.Builder("JAVA RC, JAVA RC, YES IT'S THE JAVA-RC, HURRAY FOR THE JAVA RC, LET'S GO JAVA RC").build();
-            Play playSong = new Play.Builder("https://api.twilio.com/cowbell.mp3").build();
-            VoiceResponse voiceResponse = new VoiceResponse.Builder().say(sayHello).play(playSong).build();
-            return voiceResponse.toXml();
+            response.type("application/xml");
+            return twimlResponseXml();
         });
 
         // this endpoint handles dialing outbound phone calls with the TwilioRestClient object
