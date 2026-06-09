@@ -3,6 +3,9 @@ package org.example;
 import org.junit.Test;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -86,5 +89,16 @@ public class MainTest {
                 "Dialing +123456 from your Twilio phone number...",
                 Main.dialMessage("+123456", false)
         );
+    }
+
+    @Test
+    public void defaultsLog4jToInfoInsteadOfDebug() throws Exception {
+        String properties = new String(
+                Files.readAllBytes(Paths.get("src/main/resources/log4j.properties")),
+                StandardCharsets.UTF_8
+        );
+
+        assertTrue(properties.contains("log4j.rootLogger=info, stdout"));
+        assertFalse(properties.contains("log4j.rootLogger=debug, stdout"));
     }
 }

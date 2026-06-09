@@ -21,12 +21,14 @@ Priority:
 - Treat outbound call creation as a live side effect
 - Validate phone numbers and required callback configuration before dialing
 - Keep outbound calls in dry-run mode unless explicitly enabled
+- Keep checked-in runtime logging at info by default
 
 Next priorities:
 
 - Add integration-test coverage around Spark routes
 - Add a mock Twilio client path for local tests
 - Document supported Java, Maven, and Twilio SDK versions
+- Add explicit debug-log redaction guidance
 
 Contribution rules:
 

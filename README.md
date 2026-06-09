@@ -48,12 +48,15 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - Run `mvn package` and then `java -jar target/Testing1234-1.0-jar-with-dependencies.jar`.
 - Open `/` and submit a valid E.164 phone number. The app rejects missing or
   malformed numbers before a dry run or live Twilio call.
+- Runtime logging defaults to `info`; switch to debug only in a local working
+  copy when you are prepared to redact call metadata before sharing logs.
 
 ## Testing and Verification
 
 - `make check`
 - `mvn test`
 - `mvn -DskipTests package`
+- Tests keep the checked-in Log4j default at `info` rather than `debug`.
 - Completed maintenance plans live under `docs/plans` and are checked by
   `make check`.
 
