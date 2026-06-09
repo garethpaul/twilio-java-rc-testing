@@ -54,6 +54,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - `make check`
 - `mvn test`
 - `mvn -DskipTests package`
+- Completed maintenance plans live under `docs/plans` and are checked by
+  `make check`.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -72,6 +74,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
+- See `docs/plans/2026-06-08-twilio-java-rc-testing-baseline.md` for the
+  canonical dry-run dialing and verification baseline.
 
 ## Contributing
 

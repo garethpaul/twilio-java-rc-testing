@@ -2,6 +2,7 @@
 
 ## 2026-06-08
 
+- Added canonical `docs/plans` coverage to the Maven test gate.
 - Added a default dry-run path for `/dial-phone`; live outbound calls now
   require `TWILIO_SEND_LIVE=true`.
 - Added JUnit coverage for live-send opt-in, dry-run configuration, and route
