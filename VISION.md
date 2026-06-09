@@ -18,6 +18,7 @@ Priority:
 - Preserve the Spark server and `/twiml` plus `/dial-phone` flow
 - Keep account credentials and phone numbers in environment variables
 - Maintain `make check` and Maven packaging for a runnable jar
+- Keep local IDE metadata out of the portable sample
 - Keep deployment port parsing predictable and safe for local fallback
 - Treat outbound call creation as a live side effect
 - Validate phone numbers and required callback configuration before dialing

@@ -74,6 +74,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   on POST rather than GET.
 - Tests keep invalid dial-target errors and required phone input aligned with
   the POST form flow.
+- Tests keep local IntelliJ `.idea/` metadata ignored and out of the portable
+  sample.
 - Completed maintenance plans live under `docs/plans` and are checked by
   `make check`.
 
@@ -110,6 +112,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   coverage.
 - See `docs/plans/2026-06-09-post-invalid-dial-target.md` for POST-aligned
   invalid dial-target error coverage.
+- See `docs/plans/2026-06-09-ide-metadata-ignore.md` for local IDE metadata
+  ignore coverage.
 
 ## Contributing
 

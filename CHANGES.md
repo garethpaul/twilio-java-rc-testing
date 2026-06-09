@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Removed tracked IntelliJ `.idea` metadata and added JUnit coverage for the
+  broad local IDE ignore rule.
 - Removed stale URL wording from invalid dial-target errors now that
   `/dial-phone` is POST-only.
 - Marked the POST form phone number input as required with JUnit coverage.
