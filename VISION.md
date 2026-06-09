@@ -21,7 +21,7 @@ Priority:
 - Keep deployment port parsing predictable and safe for local fallback
 - Treat outbound call creation as a live side effect
 - Validate phone numbers and required callback configuration before dialing
-- Require callback base URLs to be parseable HTTPS URLs
+- Require callback base URLs to be parseable HTTPS origins
 - Keep outbound calls in dry-run mode unless explicitly enabled
 - Keep TwiML callback responses explicit and testable
 - Keep checked-in runtime logging at info by default

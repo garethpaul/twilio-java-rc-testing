@@ -50,8 +50,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   falls back to `4567` for local runs.
 - Open `/` and submit a valid E.164 phone number. The app rejects missing or
   malformed numbers before a dry run or live Twilio call.
-- `NGROK_URL` must be a valid HTTPS URL with a host before the app builds a
-  TwiML callback URL.
+- `NGROK_URL` must be a valid HTTPS origin URL with a host, without path,
+  query, fragment, or userinfo, before the app builds a TwiML callback URL.
 - The `/twiml` route returns TwiML XML with an explicit `application/xml`
   content type.
 - Runtime logging defaults to `info`; switch to debug only in a local working
@@ -64,7 +64,7 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - `mvn -DskipTests package`
 - Tests keep the checked-in Log4j default at `info` rather than `debug`.
 - Tests cover TwiML XML generation and the `/twiml` content type contract.
-- Tests cover HTTPS callback URL validation before live-call setup.
+- Tests cover HTTPS origin callback URL validation before live-call setup.
 - Tests cover safe `PORT` parsing before Spark starts.
 - Completed maintenance plans live under `docs/plans` and are checked by
   `make check`.
@@ -94,6 +94,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   URL validation coverage.
 - See `docs/plans/2026-06-09-port-parsing.md` for safe assigned-port parsing
   coverage.
+- See `docs/plans/2026-06-09-callback-origin-validation.md` for callback
+  origin validation coverage.
 
 ## Contributing
 

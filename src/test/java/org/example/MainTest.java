@@ -78,7 +78,7 @@ public class MainTest {
     @Test
     public void rejectsInsecureCallbackBaseUrl() {
         assertEquals(
-                "NGROK_URL must be a valid https URL",
+                "NGROK_URL must be a valid https origin URL",
                 Main.callConfigurationError("sid", "token", "+123456", "http://example.ngrok.io")
         );
     }
@@ -86,13 +86,21 @@ public class MainTest {
     @Test
     public void rejectsMalformedCallbackBaseUrl() {
         assertEquals(
-                "NGROK_URL must be a valid https URL",
+                "NGROK_URL must be a valid https origin URL",
                 Main.callConfigurationError("sid", "token", "+123456", "https://")
         );
         assertEquals(
-                "NGROK_URL must be a valid https URL",
+                "NGROK_URL must be a valid https origin URL",
                 Main.callConfigurationError("sid", "token", "+123456", "not a url")
         );
+    }
+
+    @Test
+    public void rejectsCallbackBaseUrlsWithPathQueryFragmentOrUserInfo() {
+        assertFalse(Main.isValidCallbackBaseUrl("https://example.ngrok.io/path"));
+        assertFalse(Main.isValidCallbackBaseUrl("https://example.ngrok.io?token=secret"));
+        assertFalse(Main.isValidCallbackBaseUrl("https://example.ngrok.io#fragment"));
+        assertFalse(Main.isValidCallbackBaseUrl("https://user@example.ngrok.io"));
     }
 
     @Test
@@ -103,6 +111,7 @@ public class MainTest {
     @Test
     public void validatesCallbackBaseUrls() {
         assertTrue(Main.isValidCallbackBaseUrl(" https://example.ngrok.io "));
+        assertTrue(Main.isValidCallbackBaseUrl("https://example.ngrok.io/"));
         assertFalse(Main.isValidCallbackBaseUrl(null));
         assertFalse(Main.isValidCallbackBaseUrl(""));
         assertFalse(Main.isValidCallbackBaseUrl("https://"));

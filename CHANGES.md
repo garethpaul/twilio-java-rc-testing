@@ -2,6 +2,9 @@
 
 ## 2026-06-09
 
+- Tightened `NGROK_URL` validation to require an HTTPS origin without path,
+  query, fragment, or userinfo before building the TwiML callback URL.
+- Added JUnit coverage for callback origin URL edge cases.
 - Added safe `PORT` parsing so invalid or out-of-range assigned ports fall
   back to the local default instead of crashing startup.
 - Added JUnit coverage for missing, valid, malformed, and zero `PORT` values.
