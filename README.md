@@ -48,9 +48,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - Run `mvn package` and then `java -jar target/Testing1234-1.0-jar-with-dependencies.jar`.
 - The server uses `PORT` when it is a valid positive port number and otherwise
   falls back to `4567` for local runs.
-- Open `/` and submit a valid E.164 phone number. The app rejects missing or
-  malformed numbers before a dry run or live Twilio call, and response messages
-  redact dial targets.
+- Open `/` and submit a valid E.164 phone number. The form posts to
+  `/dial-phone`; the app rejects missing or malformed numbers before a dry run
+  or live Twilio call, and response messages redact dial targets.
 - `NGROK_URL` must be a valid HTTPS origin URL with a host, without path,
   query, fragment, or userinfo, before the app builds a TwiML callback URL.
 - The `/twiml` route returns TwiML XML with an explicit `application/xml`
@@ -68,6 +68,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - Tests cover HTTPS origin callback URL validation before live-call setup.
 - Tests cover safe `PORT` parsing before Spark starts.
 - Tests cover dial-target redaction in response messages.
+- Tests keep the live-call-capable `/dial-phone` endpoint and form submission
+  on POST rather than GET.
 - Completed maintenance plans live under `docs/plans` and are checked by
   `make check`.
 
@@ -100,6 +102,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   origin validation coverage.
 - See `docs/plans/2026-06-09-dial-target-redaction.md` for dial response
   redaction coverage.
+- See `docs/plans/2026-06-09-post-dial-route.md` for POST-only dial route
+  coverage.
 
 ## Contributing
 

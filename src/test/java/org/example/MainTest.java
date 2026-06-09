@@ -145,6 +145,28 @@ public class MainTest {
     }
 
     @Test
+    public void dialPhoneRouteUsesPostOnly() throws Exception {
+        String source = new String(
+                Files.readAllBytes(Paths.get("src/main/java/org/example/Main.java")),
+                StandardCharsets.UTF_8
+        );
+
+        assertTrue(source.contains("post(\"/dial-phone\""));
+        assertFalse(source.contains("get(\"/dial-phone\""));
+    }
+
+    @Test
+    public void dialPhoneFormSubmitsWithPost() throws Exception {
+        String html = new String(
+                Files.readAllBytes(Paths.get("src/main/resources/public/index.html")),
+                StandardCharsets.UTF_8
+        );
+
+        assertTrue(html.contains("<form method=\"post\" action=\"/dial-phone\">"));
+        assertFalse(html.contains("<form method=\"get\" action=\"/dial-phone\">"));
+    }
+
+    @Test
     public void liveSendFlagRequiresExplicitTrue() {
         assertFalse(Main.shouldSendLive(null));
         assertFalse(Main.shouldSendLive(""));

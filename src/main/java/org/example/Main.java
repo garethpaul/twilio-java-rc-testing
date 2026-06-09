@@ -191,7 +191,7 @@ public class Main {
         });
 
         // this endpoint handles dialing outbound phone calls with the TwilioRestClient object
-        get("/dial-phone", (request, response) -> {
+        post("/dial-phone", (request, response) -> {
             String phoneNumber = request.queryParams("number");//request.params(":number");
             if (!isValidPhoneNumber(phoneNumber)) {
                 response.status(400);

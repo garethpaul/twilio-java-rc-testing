@@ -2,6 +2,9 @@
 
 ## 2026-06-09
 
+- Changed the live-call-capable `/dial-phone` action and form submission from
+  GET to POST.
+- Added JUnit source-contract coverage so the dial route and form stay POST.
 - Redacted dial targets in dry-run and live response messages with JUnit
   coverage.
 - Tightened `NGROK_URL` validation to require an HTTPS origin without path,

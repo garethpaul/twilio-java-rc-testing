@@ -22,6 +22,7 @@ Priority:
 - Treat outbound call creation as a live side effect
 - Validate phone numbers and required callback configuration before dialing
 - Redact dial targets in response messages
+- Keep live-call-capable dial actions behind POST form submissions
 - Require callback base URLs to be parseable HTTPS origins
 - Keep outbound calls in dry-run mode unless explicitly enabled
 - Keep TwiML callback responses explicit and testable
