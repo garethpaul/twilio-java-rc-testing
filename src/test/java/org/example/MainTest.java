@@ -287,6 +287,42 @@ public class MainTest {
     }
 
     @Test
+    public void liveDialHidesTwilioProviderFailureDetails() {
+        String originalNumber = Main.twilioNumber;
+        String originalBaseUrl = Main.NGROK_BASE_URL;
+        String originalSendLive = Main.TWILIO_SEND_LIVE;
+        String originalDialToken = Main.TWILIO_DIAL_TOKEN;
+        String originalAccountSid = Main.accountSid;
+        String originalAuthToken = Main.authToken;
+        try {
+            Main.twilioNumber = "+15551234567";
+            Main.NGROK_BASE_URL = "https://example.ngrok.io";
+            Main.TWILIO_SEND_LIVE = "true";
+            Main.TWILIO_DIAL_TOKEN = "dial-secret";
+            Main.accountSid = "sid";
+            Main.authToken = "token";
+            Main.HttpResult result = Main.dialPhone(
+                    "+15557654321",
+                    "dial-secret",
+                    (to, from, callbackUri) -> {
+                        throw new RuntimeException("provider response included auth-token-secret");
+                    }
+            );
+
+            assertEquals(502, result.status);
+            assertEquals("Twilio call request failed.", result.body);
+            assertFalse(result.body.contains("auth-token-secret"));
+        } finally {
+            Main.twilioNumber = originalNumber;
+            Main.NGROK_BASE_URL = originalBaseUrl;
+            Main.TWILIO_SEND_LIVE = originalSendLive;
+            Main.TWILIO_DIAL_TOKEN = originalDialToken;
+            Main.accountSid = originalAccountSid;
+            Main.authToken = originalAuthToken;
+        }
+    }
+
+    @Test
     public void describesDryRunAndLiveDialMessages() {
         assertEquals(
                 "Dry run: would dial ***3456 from your Twilio phone number...",

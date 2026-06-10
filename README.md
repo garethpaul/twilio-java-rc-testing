@@ -61,6 +61,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   or live Twilio call, response messages redact dial targets, and invalid
   dial-target errors refer to the form submission rather than URL input. The
   checked-in form marks the phone number field as required before submission.
+- Twilio SDK failures return a generic `502` response without exposing provider
+  diagnostics, credentials, or request metadata.
 - `NGROK_URL` must be a valid HTTPS origin URL with a host, without path,
   query, fragment, or userinfo, before the app builds a TwiML callback URL.
 - The `/twiml` route returns TwiML XML with an explicit `application/xml`
@@ -87,6 +89,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - Tests cover safe `PORT` parsing before the built-in HTTP server starts.
 - Tests cover dial-target redaction in response messages.
 - Tests require a constant-time authorization-token match before live dialing.
+- Tests require provider failures to return a generic `502` without leaking
+  exception details.
 - Tests keep the live-call-capable `/dial-phone` endpoint and form submission
   on POST rather than GET.
 - Tests keep invalid dial-target errors and required phone input aligned with

@@ -33,8 +33,22 @@ for path in \
   "docs/plans/2026-06-09-scripted-baseline-check.md" \
   "docs/plans/2026-06-10-dependencies-and-ci.md" \
   "docs/plans/2026-06-10-http-response-headers.md" \
+  "docs/plans/2026-06-10-provider-failure-response.md" \
   "scripts/check-baseline.sh"; do
   require_file "$path"
+done
+
+for provider_failure_contract in \
+  "return dialPhone(phoneNumber, dialToken, Main::createTwilioCall)" \
+  "static HttpResult dialPhone(String phoneNumber, String dialToken, CallSender callSender)" \
+  "catch (RuntimeException providerError)" \
+  'new HttpResult(502, "Twilio call request failed.")' \
+  "liveDialHidesTwilioProviderFailureDetails"; do
+  if ! grep -Fq -- "$provider_failure_contract" "$ROOT_DIR/src/main/java/org/example/Main.java" && \
+     ! grep -Fq -- "$provider_failure_contract" "$ROOT_DIR/src/test/java/org/example/MainTest.java"; then
+    printf '%s\n' "Twilio provider failure contract is missing: $provider_failure_contract" >&2
+    exit 1
+  fi
 done
 
 if ! grep -Fq '"$(ROOT)/scripts/check-baseline.sh"' "$MAKEFILE"; then

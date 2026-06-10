@@ -33,6 +33,9 @@ public class Main {
     static String TWILIO_DIAL_TOKEN = System.getenv("TWILIO_DIAL_TOKEN");
     private static final Pattern E164_PHONE_NUMBER = Pattern.compile("^\\+[1-9]\\d{1,14}$");
     private static final int MAX_FORM_BYTES = 8 * 1024;
+    interface CallSender {
+        void create(PhoneNumber to, PhoneNumber from, URI callbackUri);
+    }
 
 
     static private String renderContent(String htmlFile) {
@@ -260,6 +263,10 @@ public class Main {
     }
 
     static HttpResult dialPhone(String phoneNumber, String dialToken) {
+        return dialPhone(phoneNumber, dialToken, Main::createTwilioCall);
+    }
+
+    static HttpResult dialPhone(String phoneNumber, String dialToken, CallSender callSender) {
         if (!isValidPhoneNumber(phoneNumber)) {
             return new HttpResult(400, invalidDialTargetMessage());
         }
@@ -288,9 +295,17 @@ public class Main {
         PhoneNumber to = new PhoneNumber(phoneNumber.trim());
         PhoneNumber from = new PhoneNumber(twilioNumber.trim());
         URI uri = twimlUri(NGROK_BASE_URL);
+        try {
+            callSender.create(to, from, uri);
+        } catch (RuntimeException providerError) {
+            return new HttpResult(502, "Twilio call request failed.");
+        }
+        return new HttpResult(200, dialMessage(phoneNumber, false));
+    }
+
+    private static void createTwilioCall(PhoneNumber to, PhoneNumber from, URI uri) {
         TwilioRestClient client = new TwilioRestClient.Builder(accountSid, authToken).build();
         new CallCreator(to, from, uri).create(client);
-        return new HttpResult(200, dialMessage(phoneNumber, false));
     }
 
     private static boolean requireMethod(HttpExchange exchange, String method) throws IOException {

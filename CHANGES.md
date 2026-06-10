@@ -2,6 +2,8 @@
 
 ## 2026-06-10
 
+- Converted Twilio SDK runtime failures into a generic HTTP 502 response and
+  added an injectable provider-boundary regression test.
 - Added centralized no-store, Content Security Policy, permissions, referrer,
   framing, and MIME-sniffing response headers with loopback integration tests.
 - Fixed GitHub Actions to Ubuntu 24.04 with annotated immutable actions and
