@@ -2,6 +2,10 @@
 
 ## 2026-06-10
 
+- Added centralized no-store, Content Security Policy, permissions, referrer,
+  framing, and MIME-sniffing response headers with loopback integration tests.
+- Fixed GitHub Actions to Ubuntu 24.04 with annotated immutable actions and
+  scoped concurrency, and made every Maven target root-independent.
 - Replaced the Twilio Java 9.0.0 release candidate with stable 12.1.1 after
   verifying unchanged call and TwiML APIs across Java 8, 11, 17, and 21.
 - Removed Spark and Jetty after hosted scanning found advisories affecting the

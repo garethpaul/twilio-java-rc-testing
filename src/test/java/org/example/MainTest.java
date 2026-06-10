@@ -199,6 +199,14 @@ public class MainTest {
             assertTrue(response.contentType.startsWith("text/html"));
             assertTrue(response.body.contains("Twilio Java voice testing"));
             assertTrue(response.body.contains("method=\"post\" action=\"/dial-phone\""));
+            assertEquals("no-store", response.cacheControl);
+            assertEquals("DENY", response.frameOptions);
+            assertEquals("no-referrer", response.referrerPolicy);
+            assertEquals("camera=(), geolocation=(), microphone=()", response.permissionsPolicy);
+            assertTrue(response.contentSecurityPolicy.contains("default-src 'none'"));
+            assertTrue(response.contentSecurityPolicy.contains("form-action 'self'"));
+            assertTrue(response.contentSecurityPolicy.contains("frame-ancestors 'none'"));
+            assertTrue(response.contentSecurityPolicy.contains("https://cdn.jsdelivr.net"));
         } finally {
             server.stop(0);
         }
@@ -369,6 +377,11 @@ public class MainTest {
                 status,
                 connection.getHeaderField("Content-Type"),
                 connection.getHeaderField("Allow"),
+                connection.getHeaderField("Cache-Control"),
+                connection.getHeaderField("Content-Security-Policy"),
+                connection.getHeaderField("Permissions-Policy"),
+                connection.getHeaderField("Referrer-Policy"),
+                connection.getHeaderField("X-Frame-Options"),
                 responseBody
         );
         connection.disconnect();
@@ -390,12 +403,32 @@ public class MainTest {
         final int status;
         final String contentType;
         final String allow;
+        final String cacheControl;
+        final String contentSecurityPolicy;
+        final String permissionsPolicy;
+        final String referrerPolicy;
+        final String frameOptions;
         final String body;
 
-        HttpResponse(int status, String contentType, String allow, String body) {
+        HttpResponse(
+                int status,
+                String contentType,
+                String allow,
+                String cacheControl,
+                String contentSecurityPolicy,
+                String permissionsPolicy,
+                String referrerPolicy,
+                String frameOptions,
+                String body
+        ) {
             this.status = status;
             this.contentType = contentType;
             this.allow = allow;
+            this.cacheControl = cacheControl;
+            this.contentSecurityPolicy = contentSecurityPolicy;
+            this.permissionsPolicy = permissionsPolicy;
+            this.referrerPolicy = referrerPolicy;
+            this.frameOptions = frameOptions;
             this.body = body;
         }
     }

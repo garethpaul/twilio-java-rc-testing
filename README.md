@@ -65,6 +65,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   query, fragment, or userinfo, before the app builds a TwiML callback URL.
 - The `/twiml` route returns TwiML XML with an explicit `application/xml`
   content type.
+- Every HTTP response disables caching and framing, suppresses referrers and
+  unused browser capabilities, and applies a restrictive Content Security
+  Policy that permits only the existing Bootstrap stylesheet origin.
 - Runtime logging defaults to `info`; switch to debug only in a local working
   copy when you are prepared to redact call metadata before sharing logs.
 
@@ -74,7 +77,7 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - `scripts/check-baseline.sh`
 - `mvn test`
 - GitHub Actions runs `make check` on Java 8, 11, 17, and 21 with read-only
-  repository permissions and immutable action pins.
+  repository permissions, Ubuntu 24.04, and immutable action pins.
 - `mvn -DskipTests package`
 - The baseline script checks required project files, completed docs-plan
   metadata, and local editor metadata hygiene.

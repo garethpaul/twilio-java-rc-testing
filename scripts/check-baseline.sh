@@ -32,14 +32,24 @@ for path in \
   "docs/plans/2026-06-08-twilio-java-rc-testing-baseline.md" \
   "docs/plans/2026-06-09-scripted-baseline-check.md" \
   "docs/plans/2026-06-10-dependencies-and-ci.md" \
+  "docs/plans/2026-06-10-http-response-headers.md" \
   "scripts/check-baseline.sh"; do
   require_file "$path"
 done
 
-if ! grep -Fq "scripts/check-baseline.sh" "$MAKEFILE"; then
+if ! grep -Fq '"$(ROOT)/scripts/check-baseline.sh"' "$MAKEFILE"; then
   printf '%s\n' "Makefile must run scripts/check-baseline.sh from make check." >&2
   exit 1
 fi
+
+for make_contract in \
+  'ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))' \
+  'cd "$(ROOT)" && $(MVN)'; do
+  if ! grep -Fq -- "$make_contract" "$MAKEFILE"; then
+    printf '%s\n' "Makefile is missing root-independent contract: $make_contract" >&2
+    exit 1
+  fi
+done
 
 for target in "lint:" "test:" "build:" "verify:" "check:"; do
   if ! grep -Fq "$target" "$MAKEFILE"; then

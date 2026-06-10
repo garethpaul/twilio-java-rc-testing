@@ -38,6 +38,10 @@ Live `/dial-phone` requests require the separately configured
 `TWILIO_DIAL_TOKEN`. Use a high-entropy value, do not place it in URLs or source
 control, and rotate it if a submitted form or request log may have exposed it.
 
+HTTP responses use `no-store`, framing denial, a no-referrer policy, a
+restrictive Content Security Policy, and disabled camera/geolocation/microphone
+capabilities. Keep these controls aligned with any future UI asset changes.
+
 For web services, APIs, sockets, or scraping workflows, prioritize reports involving authentication bypass, authorization errors, injection, server-side request forgery, unsafe deserialization, credential leakage, data exposure, or denial-of-service conditions. Use test accounts and minimal proof-of-concept traffic only.
 
 ## Dependency and Supply Chain Security

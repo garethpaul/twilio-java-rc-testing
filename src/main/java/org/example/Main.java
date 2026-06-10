@@ -347,7 +347,16 @@ public class Main {
     ) throws IOException {
         byte[] responseBytes = body.getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().set("Content-Type", contentType);
+        exchange.getResponseHeaders().set("Cache-Control", "no-store");
+        exchange.getResponseHeaders().set(
+                "Content-Security-Policy",
+                "default-src 'none'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+                        + "form-action 'self'; frame-ancestors 'none'; base-uri 'none'"
+        );
+        exchange.getResponseHeaders().set("Permissions-Policy", "camera=(), geolocation=(), microphone=()");
+        exchange.getResponseHeaders().set("Referrer-Policy", "no-referrer");
         exchange.getResponseHeaders().set("X-Content-Type-Options", "nosniff");
+        exchange.getResponseHeaders().set("X-Frame-Options", "DENY");
         exchange.sendResponseHeaders(status, responseBytes.length);
         try (OutputStream output = exchange.getResponseBody()) {
             output.write(responseBytes);

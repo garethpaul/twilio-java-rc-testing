@@ -1,17 +1,18 @@
 .PHONY: build check lint test verify
 
+ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 MVN ?= mvn
 
 lint:
-	$(MVN) -q -DskipTests compile
+	cd "$(ROOT)" && $(MVN) -q -DskipTests compile
 
 test:
-	$(MVN) -q test
+	cd "$(ROOT)" && $(MVN) -q test
 
 build:
-	$(MVN) -q -DskipTests package
+	cd "$(ROOT)" && $(MVN) -q -DskipTests package
 
 verify: lint test build
 
 check: verify
-	scripts/check-baseline.sh
+	"$(ROOT)/scripts/check-baseline.sh"
