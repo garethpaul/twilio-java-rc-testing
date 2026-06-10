@@ -1,5 +1,17 @@
 # Changes
 
+## 2026-06-10
+
+- Replaced the Twilio Java 9.0.0 release candidate with stable 12.1.1 after
+  verifying unchanged call and TwiML APIs on Java 8 and Java 11.
+- Upgraded Spark Java from 2.9.3 to its final 2.9.4 patch release.
+- Overrode Spark's remaining Jetty line with advisory-free 9.4.58 through the
+  official Jetty BOM.
+- Added least-privilege GitHub Actions verification across Java 8 and Java 11
+  with immutable action pins and Maven caching.
+- Added JUnit contracts for exact dependency versions and hosted workflow
+  security settings.
+
 ## 2026-06-09
 
 - Removed unused Apache Spark Streaming, Velocity, and WebJars declarations from

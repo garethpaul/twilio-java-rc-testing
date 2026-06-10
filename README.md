@@ -12,6 +12,7 @@ This README is based on the checked-in source, manifests, scripts, and repositor
 ## Repository Contents
 
 - `README.md` - project overview and local usage notes
+- `.github/workflows/check.yml` - hosted Java 8 and Java 11 verification
 - `pom.xml`
 - `Procfile`
 - `scripts/check-baseline.sh` - repository maintenance baseline guard
@@ -46,6 +47,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - Configure `TWILIO_PHONE_NUMBER` and `NGROK_URL` for dry-run testing.
   Configure `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and
   `TWILIO_SEND_LIVE=true` only when intentionally placing live calls.
+- Maven resolves Spark Java 2.9.4, the stable Twilio Java 12.1.1 SDK, and an
+  explicit Jetty 9.4.58 BOM for Spark's transitive server dependencies.
 - Run `mvn package` and then `java -jar target/Testing1234-1.0-jar-with-dependencies.jar`.
 - The server uses `PORT` when it is a valid positive port number and otherwise
   falls back to `4567` for local runs.
@@ -66,6 +69,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - `make check`
 - `scripts/check-baseline.sh`
 - `mvn test`
+- GitHub Actions runs `make check` on Java 8 and Java 11 with read-only
+  repository permissions and immutable action pins.
 - `mvn -DskipTests package`
 - The baseline script checks required project files, completed docs-plan
   metadata, and local editor metadata hygiene.
@@ -124,6 +129,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   repository baseline guard.
 - See `docs/plans/2026-06-09-unused-legacy-dependencies.md` for unused Maven
   dependency cleanup coverage.
+- See `docs/plans/2026-06-10-dependencies-and-ci.md` for stable dependency and
+  hosted Java matrix verification.
 
 ## Contributing
 
