@@ -49,6 +49,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   `TWILIO_SEND_LIVE=true` only when intentionally placing live calls.
 - Maven resolves the stable Twilio Java 12.1.1 SDK. HTTP routes use Java's
   built-in server, so the sample does not depend on vulnerable Spark/Jetty 9.4.
+- Dependency management keeps Twilio's Jackson line at 2.18.7 and Apache
+  HttpCore at 5.3.5 to include hosted-scanner fixes.
 - Run `mvn package` and then `java -jar target/Testing1234-1.0-jar-with-dependencies.jar`.
 - The server uses `PORT` when it is a valid positive port number and otherwise
   falls back to `4567` for local runs.

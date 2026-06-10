@@ -8,6 +8,8 @@
   entire Jetty 9.4 line, and preserved routes on Java's built-in HTTP server.
 - Added real HTTP integration coverage and fixed packaged-JAR classpath
   resource loading for the bundled form.
+- Pinned Jackson 2.18.7 and Apache HttpCore 5.3.5 to resolve the remaining
+  hosted Snyk findings in Twilio's transitive dependency graph.
 - Added least-privilege GitHub Actions verification across Java 8 and Java 11
   with immutable action pins and Maven caching.
 - Added JUnit contracts for exact dependency versions and hosted workflow

@@ -81,6 +81,8 @@ public class DocsPlansTest {
         );
         assertFalse("Spark must not reintroduce vulnerable Jetty", pom.contains("spark-core"));
         assertFalse("Jetty must not be a runtime dependency", pom.contains("jetty-"));
+        assertTrue("Jackson must use the fixed BOM", pom.contains("<version>2.18.7</version>"));
+        assertTrue("HttpCore must use the fixed release", pom.contains("<version>5.3.5</version>"));
         assertFalse("Twilio release candidates must not return", pom.contains("9.0.0-rc.1"));
     }
 
