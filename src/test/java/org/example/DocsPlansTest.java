@@ -23,6 +23,8 @@ public class DocsPlansTest {
     private static final Path IDE_METADATA_PLAN = DOCS_PLANS.resolve("2026-06-09-ide-metadata-ignore.md");
     private static final Path SCRIPTED_BASELINE_PLAN = DOCS_PLANS.resolve("2026-06-09-scripted-baseline-check.md");
     private static final Path UNUSED_DEPENDENCIES_PLAN = DOCS_PLANS.resolve("2026-06-09-unused-legacy-dependencies.md");
+    private static final Path DEPENDENCIES_AND_CI_PLAN =
+            DOCS_PLANS.resolve("2026-06-10-dependencies-and-ci.md");
 
     @Test
     public void canonicalPlanIsCompletedAndVerified() throws IOException {
@@ -42,6 +44,10 @@ public class DocsPlansTest {
         assertTrue("IDE metadata ignore plan must exist", plans.contains(IDE_METADATA_PLAN));
         assertTrue("scripted baseline plan must exist", plans.contains(SCRIPTED_BASELINE_PLAN));
         assertTrue("unused dependency cleanup plan must exist", plans.contains(UNUSED_DEPENDENCIES_PLAN));
+        assertTrue(
+                "dependencies and CI plan must exist",
+                plans.contains(DEPENDENCIES_AND_CI_PLAN)
+        );
 
         for (Path plan : plans) {
             String text = new String(Files.readAllBytes(plan), StandardCharsets.UTF_8);
@@ -63,5 +69,41 @@ public class DocsPlansTest {
         String makefile = new String(Files.readAllBytes(REPO_ROOT.resolve("Makefile")), StandardCharsets.UTF_8);
 
         assertTrue("make check must run the scripted baseline guard", makefile.contains("scripts/check-baseline.sh"));
+    }
+
+    @Test
+    public void dependenciesUseVerifiedStableVersions() throws IOException {
+        String pom = read("pom.xml");
+
+        assertTrue(
+                "Twilio must use the current stable SDK",
+                pom.contains("<version>12.1.1</version>")
+        );
+        assertFalse("Spark must not reintroduce vulnerable Jetty", pom.contains("spark-core"));
+        assertFalse("Jetty must not be a runtime dependency", pom.contains("jetty-"));
+        assertTrue("Jackson must use the fixed BOM", pom.contains("<version>2.18.8</version>"));
+        assertTrue("HttpCore must use the fixed release", pom.contains("<version>5.3.6</version>"));
+        assertFalse("Twilio release candidates must not return", pom.contains("9.0.0-rc.1"));
+    }
+
+    @Test
+    public void hostedVerificationIsPinnedAndLeastPrivilege() throws IOException {
+        String workflow = read(".github/workflows/check.yml");
+
+        assertTrue(workflow.contains("permissions:\n  contents: read"));
+        assertTrue(workflow.contains("timeout-minutes: 10"));
+        assertTrue(workflow.contains("java-version: [\"8\", \"11\", \"17\", \"21\"]"));
+        assertTrue(workflow.contains("workflow_dispatch:"));
+        assertTrue(workflow.contains("actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10"));
+        assertTrue(workflow.contains("actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654"));
+        assertTrue(workflow.contains("run: make check"));
+        assertFalse("actions must use immutable commits", workflow.contains("@v"));
+    }
+
+    private static String read(String relativePath) throws IOException {
+        return new String(
+                Files.readAllBytes(REPO_ROOT.resolve(relativePath)),
+                StandardCharsets.UTF_8
+        );
     }
 }

@@ -5,13 +5,14 @@
 
 ## Overview
 
-`garethpaul/twilio-java-rc-testing` is a static web project. Twilio Java RC Testing
+`garethpaul/twilio-java-rc-testing` is a Java HTTP sample for safe dry-run or explicitly enabled live Twilio voice calls.
 
 This README is based on the checked-in source, manifests, scripts, and repository metadata on the `main` branch. The project language mix found during review was: Java (1).
 
 ## Repository Contents
 
 - `README.md` - project overview and local usage notes
+- `.github/workflows/check.yml` - hosted Java 8, 11, 17, and 21 verification
 - `pom.xml`
 - `Procfile`
 - `scripts/check-baseline.sh` - repository maintenance baseline guard
@@ -45,7 +46,13 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 
 - Configure `TWILIO_PHONE_NUMBER` and `NGROK_URL` for dry-run testing.
   Configure `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and
-  `TWILIO_SEND_LIVE=true` only when intentionally placing live calls.
+  `TWILIO_SEND_LIVE=true` only when intentionally placing live calls. Live
+  dialing also requires a strong `TWILIO_DIAL_TOKEN`; enter that value in the
+  form for each authorized live request.
+- Maven resolves the stable Twilio Java 12.1.1 SDK. HTTP routes use Java's
+  built-in server, so the sample does not depend on vulnerable Spark/Jetty 9.4.
+- Dependency management keeps Twilio's Java-8-compatible Jackson line at
+  2.18.8 and Apache HttpCore at 5.3.6 to include hosted-scanner fixes.
 - Run `mvn package` and then `java -jar target/Testing1234-1.0-jar-with-dependencies.jar`.
 - The server uses `PORT` when it is a valid positive port number and otherwise
   falls back to `4567` for local runs.
@@ -66,22 +73,25 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - `make check`
 - `scripts/check-baseline.sh`
 - `mvn test`
+- GitHub Actions runs `make check` on Java 8, 11, 17, and 21 with read-only
+  repository permissions and immutable action pins.
 - `mvn -DskipTests package`
 - The baseline script checks required project files, completed docs-plan
   metadata, and local editor metadata hygiene.
 - Tests keep the checked-in Log4j default at `info` rather than `debug`.
 - Tests cover TwiML XML generation and the `/twiml` content type contract.
 - Tests cover HTTPS origin callback URL validation before live-call setup.
-- Tests cover safe `PORT` parsing before Spark starts.
+- Tests cover safe `PORT` parsing before the built-in HTTP server starts.
 - Tests cover dial-target redaction in response messages.
+- Tests require a constant-time authorization-token match before live dialing.
 - Tests keep the live-call-capable `/dial-phone` endpoint and form submission
   on POST rather than GET.
 - Tests keep invalid dial-target errors and required phone input aligned with
   the POST form flow.
 - Tests keep local IntelliJ `.idea/` metadata ignored and out of the portable
   sample.
-- Tests keep unused legacy Apache Spark Streaming, Velocity, and WebJars
-  declarations out of the Maven build.
+- Tests keep legacy Spark, Jetty, Velocity, and WebJars declarations out of the
+  Maven build.
 - Completed maintenance plans live under `docs/plans` and are checked by
   `make check`.
 
@@ -124,6 +134,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   repository baseline guard.
 - See `docs/plans/2026-06-09-unused-legacy-dependencies.md` for unused Maven
   dependency cleanup coverage.
+- See `docs/plans/2026-06-10-dependencies-and-ci.md` for stable dependency and
+  hosted Java matrix verification.
 
 ## Contributing
 

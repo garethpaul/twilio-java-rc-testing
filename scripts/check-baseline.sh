@@ -17,6 +17,7 @@ require_file() {
 
 for path in \
   ".gitignore" \
+  ".github/workflows/check.yml" \
   "CHANGES.md" \
   "Makefile" \
   "README.md" \
@@ -30,6 +31,7 @@ for path in \
   "src/test/java/org/example/MainTest.java" \
   "docs/plans/2026-06-08-twilio-java-rc-testing-baseline.md" \
   "docs/plans/2026-06-09-scripted-baseline-check.md" \
+  "docs/plans/2026-06-10-dependencies-and-ci.md" \
   "scripts/check-baseline.sh"; do
   require_file "$path"
 done

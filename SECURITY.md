@@ -34,6 +34,10 @@ Helpful reports include:
 
 ## Service and API Notes
 
+Live `/dial-phone` requests require the separately configured
+`TWILIO_DIAL_TOKEN`. Use a high-entropy value, do not place it in URLs or source
+control, and rotate it if a submitted form or request log may have exposed it.
+
 For web services, APIs, sockets, or scraping workflows, prioritize reports involving authentication bypass, authorization errors, injection, server-side request forgery, unsafe deserialization, credential leakage, data exposure, or denial-of-service conditions. Use test accounts and minimal proof-of-concept traffic only.
 
 ## Dependency and Supply Chain Security

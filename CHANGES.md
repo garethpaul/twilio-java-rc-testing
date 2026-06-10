@@ -1,5 +1,22 @@
 # Changes
 
+## 2026-06-10
+
+- Replaced the Twilio Java 9.0.0 release candidate with stable 12.1.1 after
+  verifying unchanged call and TwiML APIs across Java 8, 11, 17, and 21.
+- Removed Spark and Jetty after hosted scanning found advisories affecting the
+  entire Jetty 9.4 line, and preserved routes on Java's built-in HTTP server.
+- Added real HTTP integration coverage and fixed packaged-JAR classpath
+  resource loading for the bundled form.
+- Required a separately configured, constant-time checked authorization token
+  before any live dial attempt.
+- Pinned Jackson 2.18.8 and Apache HttpCore 5.3.6 to resolve the remaining
+  hosted Snyk findings in Twilio's transitive dependency graph.
+- Added least-privilege GitHub Actions verification across Java 8, 11, 17, and 21
+  with immutable action pins and Maven caching.
+- Added JUnit contracts for exact dependency versions and hosted workflow
+  security settings.
+
 ## 2026-06-09
 
 - Removed unused Apache Spark Streaming, Velocity, and WebJars declarations from
