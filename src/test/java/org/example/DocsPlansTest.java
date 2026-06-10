@@ -76,17 +76,11 @@ public class DocsPlansTest {
         String pom = read("pom.xml");
 
         assertTrue(
-                "Spark must use its final patch release",
-                pom.contains("<version>2.9.4</version>")
-        );
-        assertTrue(
                 "Twilio must use the current stable SDK",
                 pom.contains("<version>12.1.1</version>")
         );
-        assertTrue(
-                "Jetty transitive dependencies must use the patched BOM",
-                pom.contains("<version>9.4.58.v20250814</version>")
-        );
+        assertFalse("Spark must not reintroduce vulnerable Jetty", pom.contains("spark-core"));
+        assertFalse("Jetty must not be a runtime dependency", pom.contains("jetty-"));
         assertFalse("Twilio release candidates must not return", pom.contains("9.0.0-rc.1"));
     }
 

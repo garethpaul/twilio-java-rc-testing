@@ -2,7 +2,7 @@
 
 ## Repository purpose
 
-`garethpaul/twilio-java-rc-testing` is a static web project. Twilio Java RC Testing
+`garethpaul/twilio-java-rc-testing` is a Java HTTP sample for safe dry-run or explicitly enabled live Twilio voice calls.
 
 ## Project structure
 
@@ -46,6 +46,7 @@
 - See `docs/plans/2026-06-08-twilio-java-rc-testing-baseline.md` for the canonical dry-run dialing and verification baseline.
 - See `docs/plans/2026-06-08-twiml-content-type.md` for the TwiML XML response contract.
 - See `docs/plans/2026-06-09-callback-url-validation.md` for HTTPS callback URL validation coverage.
+- See `docs/plans/2026-06-10-dependencies-and-ci.md` for the stable SDK, built-in HTTP server, and hosted verification baseline.
 
 ## Agent workflow
 

@@ -1,21 +1,20 @@
-## Twilio Java RC Testing Vision
+## Twilio Java Voice Testing Vision
 
-Twilio Java RC Testing is a Java/Spark sample for testing a Twilio Java release
-candidate by serving TwiML and placing outbound calls through configured Twilio
-credentials.
+Twilio Java Voice Testing is a small Java HTTP sample for serving TwiML and
+placing outbound calls through configured Twilio credentials.
 
-The repository is useful as a focused release-candidate exercise: it shows
+The repository is useful as a focused integration exercise: it shows
 environment-based Twilio setup, a local web server, an ngrok callback URL,
 TwiML generation, and outbound call creation.
 
-The goal is to keep the RC test path explicit, reproducible, and safe for live
+The goal is to keep the voice test path explicit, reproducible, and safe for live
 Twilio accounts.
 
 The current focus is:
 
 Priority:
 
-- Preserve the Spark server and `/twiml` plus `/dial-phone` flow
+- Preserve the built-in Java HTTP server and `/twiml` plus `/dial-phone` flow
 - Keep account credentials and phone numbers in environment variables
 - Maintain `make check` and Maven packaging for a runnable jar
 - Keep a scriptable baseline guard for required files and maintenance metadata
@@ -35,7 +34,7 @@ Priority:
 
 Next priorities:
 
-- Add integration-test coverage around Spark routes
+- Expand integration-test coverage around request limits and malformed forms
 - Add a mock Twilio client path for local tests
 - Document supported Java, Maven, and Twilio SDK versions
 - Add explicit debug-log redaction guidance
@@ -64,7 +63,7 @@ and make costs and account effects clear.
 - Malformed callback URLs that fail after call setup begins
 - Live-call defaults without operator confirmation
 - Unused legacy dependencies that expand the sample runtime surface
-- Dependency changes that obscure the RC test purpose
+- Dependency changes that expand the runtime surface without a tested need
 
 This list is a roadmap guardrail, not a permanent rule.
 Strong user demand and strong technical rationale can change it.

@@ -5,7 +5,7 @@
 
 ## Overview
 
-`garethpaul/twilio-java-rc-testing` is a static web project. Twilio Java RC Testing
+`garethpaul/twilio-java-rc-testing` is a Java HTTP sample for safe dry-run or explicitly enabled live Twilio voice calls.
 
 This README is based on the checked-in source, manifests, scripts, and repository metadata on the `main` branch. The project language mix found during review was: Java (1).
 
@@ -47,8 +47,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - Configure `TWILIO_PHONE_NUMBER` and `NGROK_URL` for dry-run testing.
   Configure `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and
   `TWILIO_SEND_LIVE=true` only when intentionally placing live calls.
-- Maven resolves Spark Java 2.9.4, the stable Twilio Java 12.1.1 SDK, and an
-  explicit Jetty 9.4.58 BOM for Spark's transitive server dependencies.
+- Maven resolves the stable Twilio Java 12.1.1 SDK. HTTP routes use Java's
+  built-in server, so the sample does not depend on vulnerable Spark/Jetty 9.4.
 - Run `mvn package` and then `java -jar target/Testing1234-1.0-jar-with-dependencies.jar`.
 - The server uses `PORT` when it is a valid positive port number and otherwise
   falls back to `4567` for local runs.
@@ -77,7 +77,7 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - Tests keep the checked-in Log4j default at `info` rather than `debug`.
 - Tests cover TwiML XML generation and the `/twiml` content type contract.
 - Tests cover HTTPS origin callback URL validation before live-call setup.
-- Tests cover safe `PORT` parsing before Spark starts.
+- Tests cover safe `PORT` parsing before the built-in HTTP server starts.
 - Tests cover dial-target redaction in response messages.
 - Tests keep the live-call-capable `/dial-phone` endpoint and form submission
   on POST rather than GET.
@@ -85,8 +85,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   the POST form flow.
 - Tests keep local IntelliJ `.idea/` metadata ignored and out of the portable
   sample.
-- Tests keep unused legacy Apache Spark Streaming, Velocity, and WebJars
-  declarations out of the Maven build.
+- Tests keep legacy Spark, Jetty, Velocity, and WebJars declarations out of the
+  Maven build.
 - Completed maintenance plans live under `docs/plans` and are checked by
   `make check`.
 

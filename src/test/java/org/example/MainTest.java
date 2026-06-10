@@ -1,8 +1,14 @@
 package org.example;
 
+import com.sun.net.httpserver.HttpServer;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -135,24 +141,67 @@ public class MainTest {
     }
 
     @Test
-    public void twimlRouteDeclaresXmlContentType() throws Exception {
-        String source = new String(
-                Files.readAllBytes(Paths.get("src/main/java/org/example/Main.java")),
-                StandardCharsets.UTF_8
-        );
+    public void twimlRouteRequiresPostAndReturnsXml() throws Exception {
+        HttpServer server = Main.startServer(0);
+        try {
+            int port = server.getAddress().getPort();
+            HttpResponse getResponse = request(port, "GET", "/twiml", null);
+            HttpResponse postResponse = request(port, "POST", "/twiml", "");
 
-        assertTrue(source.contains("response.type(\"application/xml\");"));
+            assertEquals(405, getResponse.status);
+            assertEquals("POST", getResponse.allow);
+            assertEquals(200, postResponse.status);
+            assertTrue(postResponse.contentType.startsWith("application/xml"));
+            assertTrue(postResponse.body.contains("<Response>"));
+        } finally {
+            server.stop(0);
+        }
     }
 
     @Test
-    public void dialPhoneRouteUsesPostOnly() throws Exception {
-        String source = new String(
-                Files.readAllBytes(Paths.get("src/main/java/org/example/Main.java")),
-                StandardCharsets.UTF_8
-        );
+    public void dialPhoneRouteRequiresFormPostAndKeepsDryRunDefault() throws Exception {
+        String originalNumber = Main.twilioNumber;
+        String originalBaseUrl = Main.NGROK_BASE_URL;
+        String originalSendLive = Main.TWILIO_SEND_LIVE;
+        Main.twilioNumber = "+15551234567";
+        Main.NGROK_BASE_URL = "https://example.ngrok.io";
+        Main.TWILIO_SEND_LIVE = "false";
+        HttpServer server = Main.startServer(0);
+        try {
+            int port = server.getAddress().getPort();
+            HttpResponse getResponse = request(port, "GET", "/dial-phone", null);
+            HttpResponse invalidResponse = request(port, "POST", "/dial-phone", "number=invalid");
+            HttpResponse dryRunResponse = request(port, "POST", "/dial-phone", "number=%2B15551231234");
 
-        assertTrue(source.contains("post(\"/dial-phone\""));
-        assertFalse(source.contains("get(\"/dial-phone\""));
+            assertEquals(405, getResponse.status);
+            assertEquals("POST", getResponse.allow);
+            assertEquals(400, invalidResponse.status);
+            assertEquals(200, dryRunResponse.status);
+            assertEquals(
+                    "Dry run: would dial ********1234 from your Twilio phone number...",
+                    dryRunResponse.body
+            );
+        } finally {
+            server.stop(0);
+            Main.twilioNumber = originalNumber;
+            Main.NGROK_BASE_URL = originalBaseUrl;
+            Main.TWILIO_SEND_LIVE = originalSendLive;
+        }
+    }
+
+    @Test
+    public void rootRouteServesTheUpdatedForm() throws Exception {
+        HttpServer server = Main.startServer(0);
+        try {
+            HttpResponse response = request(server.getAddress().getPort(), "GET", "/", null);
+
+            assertEquals(200, response.status);
+            assertTrue(response.contentType.startsWith("text/html"));
+            assertTrue(response.body.contains("Twilio Java voice testing"));
+            assertTrue(response.body.contains("method=\"post\" action=\"/dial-phone\""));
+        } finally {
+            server.stop(0);
+        }
     }
 
     @Test
@@ -247,5 +296,65 @@ public class MainTest {
         assertFalse(pom.contains("<artifactId>spark-streaming_2.10</artifactId>"));
         assertFalse(pom.contains("<artifactId>velocity</artifactId>"));
         assertFalse(pom.contains("webjars-"));
+    }
+
+    private static HttpResponse request(int port, String method, String path, String body)
+            throws Exception {
+        HttpURLConnection connection = (HttpURLConnection) new URL(
+                "http://127.0.0.1:" + port + path
+        ).openConnection();
+        connection.setRequestMethod(method);
+        connection.setConnectTimeout(2000);
+        connection.setReadTimeout(2000);
+        if (body != null) {
+            byte[] bodyBytes = body.getBytes(StandardCharsets.UTF_8);
+            connection.setDoOutput(true);
+            connection.setRequestProperty(
+                    "Content-Type",
+                    "application/x-www-form-urlencoded; charset=utf-8"
+            );
+            try (OutputStream output = connection.getOutputStream()) {
+                output.write(bodyBytes);
+            }
+        }
+
+        int status = connection.getResponseCode();
+        InputStream stream = status >= 400
+                ? connection.getErrorStream()
+                : connection.getInputStream();
+        String responseBody = stream == null ? "" : readAll(stream);
+        HttpResponse response = new HttpResponse(
+                status,
+                connection.getHeaderField("Content-Type"),
+                connection.getHeaderField("Allow"),
+                responseBody
+        );
+        connection.disconnect();
+        return response;
+    }
+
+    private static String readAll(InputStream input) throws Exception {
+        try (InputStream stream = input; ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[1024];
+            int count;
+            while ((count = stream.read(buffer)) != -1) {
+                output.write(buffer, 0, count);
+            }
+            return new String(output.toByteArray(), StandardCharsets.UTF_8);
+        }
+    }
+
+    private static final class HttpResponse {
+        final int status;
+        final String contentType;
+        final String allow;
+        final String body;
+
+        HttpResponse(int status, String contentType, String allow, String body) {
+            this.status = status;
+            this.contentType = contentType;
+            this.allow = allow;
+            this.body = body;
+        }
     }
 }
