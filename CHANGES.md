@@ -2,15 +2,26 @@
 
 ## 2026-06-10
 
+- Converted Twilio SDK runtime failures into a generic HTTP 502 response and
+  added an injectable provider-boundary regression test.
+- Added centralized no-store, Content Security Policy, permissions, referrer,
+  framing, and MIME-sniffing response headers with loopback integration tests.
+- Added loopback regression coverage for the 8 KiB form-body limit and its
+  generic HTTP 413 response.
+- Fixed GitHub Actions to Ubuntu 24.04 with annotated immutable actions and
+  scoped concurrency, disabled persisted checkout credentials, rejected extra
+  workflow files, and made every Maven target root-independent.
 - Replaced the Twilio Java 9.0.0 release candidate with stable 12.1.1 after
-  verifying unchanged call and TwiML APIs on Java 8 and Java 11.
+  verifying unchanged call and TwiML APIs across Java 8, 11, 17, and 21.
 - Removed Spark and Jetty after hosted scanning found advisories affecting the
   entire Jetty 9.4 line, and preserved routes on Java's built-in HTTP server.
 - Added real HTTP integration coverage and fixed packaged-JAR classpath
   resource loading for the bundled form.
-- Pinned Jackson 2.18.7 and Apache HttpCore 5.3.5 to resolve the remaining
+- Required a separately configured, constant-time checked authorization token
+  before any live dial attempt.
+- Pinned Jackson 2.18.8 and Apache HttpCore 5.3.6 to resolve the remaining
   hosted Snyk findings in Twilio's transitive dependency graph.
-- Added least-privilege GitHub Actions verification across Java 8 and Java 11
+- Added least-privilege GitHub Actions verification across Java 8, 11, 17, and 21
   with immutable action pins and Maven caching.
 - Added JUnit contracts for exact dependency versions and hosted workflow
   security settings.

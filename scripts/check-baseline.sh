@@ -6,6 +6,7 @@ README="$ROOT_DIR/README.md"
 MAKEFILE="$ROOT_DIR/Makefile"
 GITIGNORE="$ROOT_DIR/.gitignore"
 DOCS_PLANS="$ROOT_DIR/docs/plans"
+WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 
 require_file() {
   path=$1
@@ -32,14 +33,64 @@ for path in \
   "docs/plans/2026-06-08-twilio-java-rc-testing-baseline.md" \
   "docs/plans/2026-06-09-scripted-baseline-check.md" \
   "docs/plans/2026-06-10-dependencies-and-ci.md" \
+  "docs/plans/2026-06-10-http-response-headers.md" \
+  "docs/plans/2026-06-10-provider-failure-response.md" \
   "scripts/check-baseline.sh"; do
   require_file "$path"
 done
 
-if ! grep -Fq "scripts/check-baseline.sh" "$MAKEFILE"; then
+workflow_files=$(find "$ROOT_DIR/.github/workflows" -maxdepth 1 -type f -print | sort)
+if [ "$workflow_files" != "$WORKFLOW" ]; then
+  printf '%s\n%s\n' "Only the canonical check workflow may be present:" "$workflow_files" >&2
+  exit 1
+fi
+
+for workflow_contract in \
+  "permissions:" \
+  "contents: read" \
+  "persist-credentials: false"; do
+  if ! grep -Fq -- "$workflow_contract" "$WORKFLOW"; then
+    printf '%s\n' "Hosted verification is missing security contract: $workflow_contract" >&2
+    exit 1
+  fi
+done
+
+if grep -Eq '^[[:space:]]*[[:alnum:]_-]+:[[:space:]]*write([[:space:]]|$)' "$WORKFLOW"; then
+  printf '%s\n' "Hosted verification must not grant write permissions." >&2
+  exit 1
+fi
+
+if grep -Fq "pull_request_target:" "$WORKFLOW"; then
+  printf '%s\n' "Hosted verification must not run untrusted changes with pull_request_target." >&2
+  exit 1
+fi
+
+for provider_failure_contract in \
+  "return dialPhone(phoneNumber, dialToken, Main::createTwilioCall)" \
+  "static HttpResult dialPhone(String phoneNumber, String dialToken, CallSender callSender)" \
+  "catch (RuntimeException providerError)" \
+  'new HttpResult(502, "Twilio call request failed.")' \
+  "liveDialHidesTwilioProviderFailureDetails"; do
+  if ! grep -Fq -- "$provider_failure_contract" "$ROOT_DIR/src/main/java/org/example/Main.java" && \
+     ! grep -Fq -- "$provider_failure_contract" "$ROOT_DIR/src/test/java/org/example/MainTest.java"; then
+    printf '%s\n' "Twilio provider failure contract is missing: $provider_failure_contract" >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fq '"$(ROOT)/scripts/check-baseline.sh"' "$MAKEFILE"; then
   printf '%s\n' "Makefile must run scripts/check-baseline.sh from make check." >&2
   exit 1
 fi
+
+for make_contract in \
+  'ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))' \
+  'cd "$(ROOT)" && $(MVN)'; do
+  if ! grep -Fq -- "$make_contract" "$MAKEFILE"; then
+    printf '%s\n' "Makefile is missing root-independent contract: $make_contract" >&2
+    exit 1
+  fi
+done
 
 for target in "lint:" "test:" "build:" "verify:" "check:"; do
   if ! grep -Fq "$target" "$MAKEFILE"; then

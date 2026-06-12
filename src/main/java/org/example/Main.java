@@ -18,6 +18,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -29,8 +30,12 @@ public class Main {
     static String twilioNumber = System.getenv("TWILIO_PHONE_NUMBER");
     static String NGROK_BASE_URL = System.getenv("NGROK_URL");
     static String TWILIO_SEND_LIVE = System.getenv("TWILIO_SEND_LIVE");
+    static String TWILIO_DIAL_TOKEN = System.getenv("TWILIO_DIAL_TOKEN");
     private static final Pattern E164_PHONE_NUMBER = Pattern.compile("^\\+[1-9]\\d{1,14}$");
     private static final int MAX_FORM_BYTES = 8 * 1024;
+    interface CallSender {
+        void create(PhoneNumber to, PhoneNumber from, URI callbackUri);
+    }
 
 
     static private String renderContent(String htmlFile) {
@@ -112,6 +117,16 @@ public class Main {
 
     static boolean shouldSendLive(String value) {
         return value != null && value.trim().equalsIgnoreCase("true");
+    }
+
+    static boolean authorizedDialToken(String configuredToken, String providedToken) {
+        if (isBlank(configuredToken) || providedToken == null) {
+            return false;
+        }
+        return MessageDigest.isEqual(
+                configuredToken.getBytes(StandardCharsets.UTF_8),
+                providedToken.getBytes(StandardCharsets.UTF_8)
+        );
     }
 
     static String dialMessage(String phoneNumber, boolean dryRun) {
@@ -216,13 +231,16 @@ public class Main {
             return;
         }
         String phoneNumber;
+        String dialToken;
         try {
-            phoneNumber = formValue(readRequestBody(exchange), "number");
+            byte[] requestBody = readRequestBody(exchange);
+            phoneNumber = formValue(requestBody, "number");
+            dialToken = formValue(requestBody, "dialToken");
         } catch (RequestTooLargeException requestTooLargeException) {
             sendResponse(exchange, 413, "text/plain; charset=utf-8", "Form submission is too large.");
             return;
         }
-        HttpResult result = dialPhone(phoneNumber);
+        HttpResult result = dialPhone(phoneNumber, dialToken);
         sendResponse(exchange, result.status, "text/plain; charset=utf-8", result.body);
     }
 
@@ -241,6 +259,14 @@ public class Main {
     }
 
     static HttpResult dialPhone(String phoneNumber) {
+        return dialPhone(phoneNumber, null);
+    }
+
+    static HttpResult dialPhone(String phoneNumber, String dialToken) {
+        return dialPhone(phoneNumber, dialToken, Main::createTwilioCall);
+    }
+
+    static HttpResult dialPhone(String phoneNumber, String dialToken, CallSender callSender) {
         if (!isValidPhoneNumber(phoneNumber)) {
             return new HttpResult(400, invalidDialTargetMessage());
         }
@@ -259,13 +285,27 @@ public class Main {
         if (!sendLive) {
             return new HttpResult(200, dialMessage(phoneNumber, true));
         }
+        if (isBlank(TWILIO_DIAL_TOKEN)) {
+            return new HttpResult(503, "Missing required configuration: TWILIO_DIAL_TOKEN");
+        }
+        if (!authorizedDialToken(TWILIO_DIAL_TOKEN, dialToken)) {
+            return new HttpResult(403, "Invalid dial authorization token.");
+        }
 
         PhoneNumber to = new PhoneNumber(phoneNumber.trim());
         PhoneNumber from = new PhoneNumber(twilioNumber.trim());
         URI uri = twimlUri(NGROK_BASE_URL);
+        try {
+            callSender.create(to, from, uri);
+        } catch (RuntimeException providerError) {
+            return new HttpResult(502, "Twilio call request failed.");
+        }
+        return new HttpResult(200, dialMessage(phoneNumber, false));
+    }
+
+    private static void createTwilioCall(PhoneNumber to, PhoneNumber from, URI uri) {
         TwilioRestClient client = new TwilioRestClient.Builder(accountSid, authToken).build();
         new CallCreator(to, from, uri).create(client);
-        return new HttpResult(200, dialMessage(phoneNumber, false));
     }
 
     private static boolean requireMethod(HttpExchange exchange, String method) throws IOException {
@@ -322,7 +362,16 @@ public class Main {
     ) throws IOException {
         byte[] responseBytes = body.getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().set("Content-Type", contentType);
+        exchange.getResponseHeaders().set("Cache-Control", "no-store");
+        exchange.getResponseHeaders().set(
+                "Content-Security-Policy",
+                "default-src 'none'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+                        + "form-action 'self'; frame-ancestors 'none'; base-uri 'none'"
+        );
+        exchange.getResponseHeaders().set("Permissions-Policy", "camera=(), geolocation=(), microphone=()");
+        exchange.getResponseHeaders().set("Referrer-Policy", "no-referrer");
         exchange.getResponseHeaders().set("X-Content-Type-Options", "nosniff");
+        exchange.getResponseHeaders().set("X-Frame-Options", "DENY");
         exchange.sendResponseHeaders(status, responseBytes.length);
         try (OutputStream output = exchange.getResponseBody()) {
             output.write(responseBytes);

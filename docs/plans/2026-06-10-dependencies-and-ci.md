@@ -17,10 +17,12 @@ reach the main branch without running them.
    release remains affected by request-smuggling and URI parsing advisories.
 3. Preserve the same static, TwiML, and dial routes on Java's built-in HTTP
    server with explicit method, content-type, body-size, and response headers.
+   Require a separately configured authorization token before live dialing.
 4. Pin Twilio's Jackson and Apache HttpCore transitives to the compatible fixed
    releases identified by hosted Snyk scanning.
-5. Add least-privilege GitHub Actions verification on Java 8 and Java 11 with
-   immutable action pins and a bounded runtime.
+5. Add least-privilege GitHub Actions verification on Java 8, 11, 17, and 21
+   with immutable action pins, non-persisted checkout credentials, a bounded
+   runtime, and rejection of additional workflow files.
 6. Add JUnit repository contracts for exact dependency versions and workflow
    security/compatibility settings.
 
@@ -28,8 +30,11 @@ reach the main branch without running them.
 
 - `make check` on Java 8
 - `make check` on Java 11
+- `make check` on Java 17
+- `make check` on Java 21
 - Packaged JAR HTTP smoke for root, method rejection, dry-run dialing, and TwiML
+- Live-dial authorization tests for missing and incorrect request tokens
 - Full resolved-graph OSV query with no remaining Spark or Jetty dependency
-- Snyk fixed-version verification for Jackson 2.18.7 and HttpCore 5.3.5
+- OSV verification for Jackson 2.18.8 and HttpCore 5.3.6
 - Negative workflow-permission and stale-dependency mutations rejected by tests
 - `git diff --check`

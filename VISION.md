@@ -29,6 +29,10 @@ Priority:
 - Keep unused legacy dependencies out of the live-call sample package
 - Require callback base URLs to be parseable HTTPS origins
 - Keep outbound calls in dry-run mode unless explicitly enabled
+- Require per-request authorization before any live dial attempt
+- Keep Twilio provider failure diagnostics out of HTTP responses
+- Keep every HTTP response non-cacheable, non-frameable, and constrained by a
+  restrictive browser security policy
 - Keep TwiML callback responses explicit and testable
 - Keep checked-in runtime logging at info by default
 

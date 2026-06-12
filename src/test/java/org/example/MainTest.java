@@ -190,6 +190,29 @@ public class MainTest {
     }
 
     @Test
+    public void dialPhoneRouteRejectsOversizedFormBodies() throws Exception {
+        StringBuilder body = new StringBuilder("number=");
+        while (body.length() <= 9 * 1024) {
+            body.append('1');
+        }
+
+        HttpServer server = Main.startServer(0);
+        try {
+            HttpResponse response = request(
+                    server.getAddress().getPort(),
+                    "POST",
+                    "/dial-phone",
+                    body.toString()
+            );
+
+            assertEquals(413, response.status);
+            assertEquals("Form submission is too large.", response.body);
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
     public void rootRouteServesTheUpdatedForm() throws Exception {
         HttpServer server = Main.startServer(0);
         try {
@@ -199,6 +222,14 @@ public class MainTest {
             assertTrue(response.contentType.startsWith("text/html"));
             assertTrue(response.body.contains("Twilio Java voice testing"));
             assertTrue(response.body.contains("method=\"post\" action=\"/dial-phone\""));
+            assertEquals("no-store", response.cacheControl);
+            assertEquals("DENY", response.frameOptions);
+            assertEquals("no-referrer", response.referrerPolicy);
+            assertEquals("camera=(), geolocation=(), microphone=()", response.permissionsPolicy);
+            assertTrue(response.contentSecurityPolicy.contains("default-src 'none'"));
+            assertTrue(response.contentSecurityPolicy.contains("form-action 'self'"));
+            assertTrue(response.contentSecurityPolicy.contains("frame-ancestors 'none'"));
+            assertTrue(response.contentSecurityPolicy.contains("https://cdn.jsdelivr.net"));
         } finally {
             server.stop(0);
         }
@@ -226,6 +257,9 @@ public class MainTest {
                 "id=\"number\" name=\"number\" placeholder=\"+ country code and number\" "
                         + "pattern=\"^\\+[1-9][0-9]{1,14}$\" required"
         ));
+        assertTrue(html.contains(
+                "id=\"dialToken\" name=\"dialToken\" placeholder=\"Live dial token\""
+        ));
     }
 
     @Test
@@ -234,6 +268,81 @@ public class MainTest {
         assertFalse(Main.shouldSendLive(""));
         assertFalse(Main.shouldSendLive("false"));
         assertTrue(Main.shouldSendLive(" TRUE "));
+    }
+
+    @Test
+    public void liveDialAuthorizationRequiresAnExactConfiguredToken() {
+        assertFalse(Main.authorizedDialToken(null, "secret"));
+        assertFalse(Main.authorizedDialToken("", "secret"));
+        assertFalse(Main.authorizedDialToken("secret", null));
+        assertFalse(Main.authorizedDialToken("secret", "wrong"));
+        assertTrue(Main.authorizedDialToken("secret", "secret"));
+    }
+
+    @Test
+    public void liveDialRejectsMissingOrIncorrectAuthorizationBeforeCallingTwilio() {
+        String originalNumber = Main.twilioNumber;
+        String originalBaseUrl = Main.NGROK_BASE_URL;
+        String originalSendLive = Main.TWILIO_SEND_LIVE;
+        String originalDialToken = Main.TWILIO_DIAL_TOKEN;
+        String originalAccountSid = Main.accountSid;
+        String originalAuthToken = Main.authToken;
+        try {
+            Main.twilioNumber = "+15551234567";
+            Main.NGROK_BASE_URL = "https://example.ngrok.io";
+            Main.TWILIO_SEND_LIVE = "true";
+            Main.accountSid = "sid";
+            Main.authToken = "token";
+
+            Main.TWILIO_DIAL_TOKEN = null;
+            assertEquals(503, Main.dialPhone("+15557654321", null).status);
+
+            Main.TWILIO_DIAL_TOKEN = "dial-secret";
+            assertEquals(403, Main.dialPhone("+15557654321", "wrong").status);
+        } finally {
+            Main.twilioNumber = originalNumber;
+            Main.NGROK_BASE_URL = originalBaseUrl;
+            Main.TWILIO_SEND_LIVE = originalSendLive;
+            Main.TWILIO_DIAL_TOKEN = originalDialToken;
+            Main.accountSid = originalAccountSid;
+            Main.authToken = originalAuthToken;
+        }
+    }
+
+    @Test
+    public void liveDialHidesTwilioProviderFailureDetails() {
+        String originalNumber = Main.twilioNumber;
+        String originalBaseUrl = Main.NGROK_BASE_URL;
+        String originalSendLive = Main.TWILIO_SEND_LIVE;
+        String originalDialToken = Main.TWILIO_DIAL_TOKEN;
+        String originalAccountSid = Main.accountSid;
+        String originalAuthToken = Main.authToken;
+        try {
+            Main.twilioNumber = "+15551234567";
+            Main.NGROK_BASE_URL = "https://example.ngrok.io";
+            Main.TWILIO_SEND_LIVE = "true";
+            Main.TWILIO_DIAL_TOKEN = "dial-secret";
+            Main.accountSid = "sid";
+            Main.authToken = "token";
+            Main.HttpResult result = Main.dialPhone(
+                    "+15557654321",
+                    "dial-secret",
+                    (to, from, callbackUri) -> {
+                        throw new RuntimeException("provider response included auth-token-secret");
+                    }
+            );
+
+            assertEquals(502, result.status);
+            assertEquals("Twilio call request failed.", result.body);
+            assertFalse(result.body.contains("auth-token-secret"));
+        } finally {
+            Main.twilioNumber = originalNumber;
+            Main.NGROK_BASE_URL = originalBaseUrl;
+            Main.TWILIO_SEND_LIVE = originalSendLive;
+            Main.TWILIO_DIAL_TOKEN = originalDialToken;
+            Main.accountSid = originalAccountSid;
+            Main.authToken = originalAuthToken;
+        }
     }
 
     @Test
@@ -327,6 +436,11 @@ public class MainTest {
                 status,
                 connection.getHeaderField("Content-Type"),
                 connection.getHeaderField("Allow"),
+                connection.getHeaderField("Cache-Control"),
+                connection.getHeaderField("Content-Security-Policy"),
+                connection.getHeaderField("Permissions-Policy"),
+                connection.getHeaderField("Referrer-Policy"),
+                connection.getHeaderField("X-Frame-Options"),
                 responseBody
         );
         connection.disconnect();
@@ -348,12 +462,32 @@ public class MainTest {
         final int status;
         final String contentType;
         final String allow;
+        final String cacheControl;
+        final String contentSecurityPolicy;
+        final String permissionsPolicy;
+        final String referrerPolicy;
+        final String frameOptions;
         final String body;
 
-        HttpResponse(int status, String contentType, String allow, String body) {
+        HttpResponse(
+                int status,
+                String contentType,
+                String allow,
+                String cacheControl,
+                String contentSecurityPolicy,
+                String permissionsPolicy,
+                String referrerPolicy,
+                String frameOptions,
+                String body
+        ) {
             this.status = status;
             this.contentType = contentType;
             this.allow = allow;
+            this.cacheControl = cacheControl;
+            this.contentSecurityPolicy = contentSecurityPolicy;
+            this.permissionsPolicy = permissionsPolicy;
+            this.referrerPolicy = referrerPolicy;
+            this.frameOptions = frameOptions;
             this.body = body;
         }
     }

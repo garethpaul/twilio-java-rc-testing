@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class DocsPlansTest {
@@ -25,6 +26,8 @@ public class DocsPlansTest {
     private static final Path UNUSED_DEPENDENCIES_PLAN = DOCS_PLANS.resolve("2026-06-09-unused-legacy-dependencies.md");
     private static final Path DEPENDENCIES_AND_CI_PLAN =
             DOCS_PLANS.resolve("2026-06-10-dependencies-and-ci.md");
+    private static final Path HTTP_RESPONSE_HEADERS_PLAN =
+            DOCS_PLANS.resolve("2026-06-10-http-response-headers.md");
 
     @Test
     public void canonicalPlanIsCompletedAndVerified() throws IOException {
@@ -48,6 +51,7 @@ public class DocsPlansTest {
                 "dependencies and CI plan must exist",
                 plans.contains(DEPENDENCIES_AND_CI_PLAN)
         );
+        assertTrue("HTTP response headers plan must exist", plans.contains(HTTP_RESPONSE_HEADERS_PLAN));
 
         for (Path plan : plans) {
             String text = new String(Files.readAllBytes(plan), StandardCharsets.UTF_8);
@@ -68,7 +72,12 @@ public class DocsPlansTest {
     public void checkGateRunsScriptedBaseline() throws IOException {
         String makefile = new String(Files.readAllBytes(REPO_ROOT.resolve("Makefile")), StandardCharsets.UTF_8);
 
-        assertTrue("make check must run the scripted baseline guard", makefile.contains("scripts/check-baseline.sh"));
+        assertTrue(
+                "make check must run the scripted baseline guard from the repository root",
+                makefile.contains("\"$(ROOT)/scripts/check-baseline.sh\"")
+        );
+        assertTrue(makefile.contains("ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))"));
+        assertTrue(makefile.contains("cd \"$(ROOT)\" && $(MVN)"));
     }
 
     @Test
@@ -81,8 +90,8 @@ public class DocsPlansTest {
         );
         assertFalse("Spark must not reintroduce vulnerable Jetty", pom.contains("spark-core"));
         assertFalse("Jetty must not be a runtime dependency", pom.contains("jetty-"));
-        assertTrue("Jackson must use the fixed BOM", pom.contains("<version>2.18.7</version>"));
-        assertTrue("HttpCore must use the fixed release", pom.contains("<version>5.3.5</version>"));
+        assertTrue("Jackson must use the fixed BOM", pom.contains("<version>2.18.8</version>"));
+        assertTrue("HttpCore must use the fixed release", pom.contains("<version>5.3.6</version>"));
         assertFalse("Twilio release candidates must not return", pom.contains("9.0.0-rc.1"));
     }
 
@@ -90,13 +99,36 @@ public class DocsPlansTest {
     public void hostedVerificationIsPinnedAndLeastPrivilege() throws IOException {
         String workflow = read(".github/workflows/check.yml");
 
+        List<Path> workflows = new ArrayList<>();
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(
+                REPO_ROOT.resolve(".github/workflows")
+        )) {
+            for (Path path : stream) {
+                if (Files.isRegularFile(path)) {
+                    workflows.add(path.getFileName());
+                }
+            }
+        }
+
+        assertEquals("only the canonical hosted workflow may exist", 1, workflows.size());
+        assertTrue(workflows.contains(Paths.get("check.yml")));
         assertTrue(workflow.contains("permissions:\n  contents: read"));
+        assertTrue(workflow.contains("persist-credentials: false"));
+        assertTrue(workflow.contains("group: check-${{ github.workflow }}-${{ github.ref }}"));
+        assertTrue(workflow.contains("cancel-in-progress: true"));
+        assertTrue(workflow.contains("runs-on: ubuntu-24.04"));
         assertTrue(workflow.contains("timeout-minutes: 10"));
-        assertTrue(workflow.contains("java-version: [\"8\", \"11\"]"));
-        assertTrue(workflow.contains("actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10"));
-        assertTrue(workflow.contains("actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654"));
+        assertTrue(workflow.contains("java-version: [\"8\", \"11\", \"17\", \"21\"]"));
+        assertTrue(workflow.contains("workflow_dispatch:"));
+        assertTrue(workflow.contains("actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3"));
+        assertTrue(workflow.contains("actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.1.0"));
         assertTrue(workflow.contains("run: make check"));
+        assertFalse("workflow must not use floating runners", workflow.contains("ubuntu-latest"));
         assertFalse("actions must use immutable commits", workflow.contains("@v"));
+        assertFalse("workflow must not grant write permissions", workflow.matches(
+                "(?s).*\\n\\s*[A-Za-z0-9_-]+:\\s*write(?:\\s|$).*"
+        ));
+        assertFalse("workflow must not use pull_request_target", workflow.contains("pull_request_target:"));
     }
 
     private static String read(String relativePath) throws IOException {
