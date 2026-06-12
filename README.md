@@ -79,7 +79,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - `scripts/check-baseline.sh`
 - `mvn test`
 - GitHub Actions runs `make check` on Java 8, 11, 17, and 21 with read-only
-  repository permissions, Ubuntu 24.04, and immutable action pins.
+  repository permissions, non-persisted checkout credentials, Ubuntu 24.04,
+  and immutable action pins. The baseline rejects additional workflow files.
 - `mvn -DskipTests package`
 - The baseline script checks required project files, completed docs-plan
   metadata, and local editor metadata hygiene.
@@ -91,6 +92,10 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - Tests require a constant-time authorization-token match before live dialing.
 - Tests require provider failures to return a generic `502` without leaking
   exception details.
+- Tests require oversized dial forms to return `413` before parsing or dialing.
+- Tests require `/dial-phone` to accept the exact form media type, including
+  case-insensitive parameterized variants, while rejecting missing, unrelated,
+  and spoofed-prefix content types with `415`.
 - Tests keep the live-call-capable `/dial-phone` endpoint and form submission
   on POST rather than GET.
 - Tests keep invalid dial-target errors and required phone input aligned with

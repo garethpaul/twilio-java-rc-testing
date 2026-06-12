@@ -1,13 +1,22 @@
 # Changes
 
+## 2026-06-12
+
+- Required the exact `application/x-www-form-urlencoded` media type on the
+  dial route while accepting case-insensitive parameterized variants, with
+  loopback and fail-closed baseline coverage for spoofed content types.
+
 ## 2026-06-10
 
 - Converted Twilio SDK runtime failures into a generic HTTP 502 response and
   added an injectable provider-boundary regression test.
 - Added centralized no-store, Content Security Policy, permissions, referrer,
   framing, and MIME-sniffing response headers with loopback integration tests.
+- Added loopback regression coverage for the 8 KiB form-body limit and its
+  generic HTTP 413 response.
 - Fixed GitHub Actions to Ubuntu 24.04 with annotated immutable actions and
-  scoped concurrency, and made every Maven target root-independent.
+  scoped concurrency, disabled persisted checkout credentials, rejected extra
+  workflow files, and made every Maven target root-independent.
 - Replaced the Twilio Java 9.0.0 release candidate with stable 12.1.1 after
   verifying unchanged call and TwiML APIs across Java 8, 11, 17, and 21.
 - Removed Spark and Jetty after hosted scanning found advisories affecting the

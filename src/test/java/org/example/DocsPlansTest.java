@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class DocsPlansTest {
@@ -98,7 +99,21 @@ public class DocsPlansTest {
     public void hostedVerificationIsPinnedAndLeastPrivilege() throws IOException {
         String workflow = read(".github/workflows/check.yml");
 
+        List<Path> workflows = new ArrayList<>();
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(
+                REPO_ROOT.resolve(".github/workflows")
+        )) {
+            for (Path path : stream) {
+                if (Files.isRegularFile(path)) {
+                    workflows.add(path.getFileName());
+                }
+            }
+        }
+
+        assertEquals("only the canonical hosted workflow may exist", 1, workflows.size());
+        assertTrue(workflows.contains(Paths.get("check.yml")));
         assertTrue(workflow.contains("permissions:\n  contents: read"));
+        assertTrue(workflow.contains("persist-credentials: false"));
         assertTrue(workflow.contains("group: check-${{ github.workflow }}-${{ github.ref }}"));
         assertTrue(workflow.contains("cancel-in-progress: true"));
         assertTrue(workflow.contains("runs-on: ubuntu-24.04"));
@@ -110,6 +125,10 @@ public class DocsPlansTest {
         assertTrue(workflow.contains("run: make check"));
         assertFalse("workflow must not use floating runners", workflow.contains("ubuntu-latest"));
         assertFalse("actions must use immutable commits", workflow.contains("@v"));
+        assertFalse("workflow must not grant write permissions", workflow.matches(
+                "(?s).*\\n\\s*[A-Za-z0-9_-]+:\\s*write(?:\\s|$).*"
+        ));
+        assertFalse("workflow must not use pull_request_target", workflow.contains("pull_request_target:"));
     }
 
     private static String read(String relativePath) throws IOException {

@@ -6,6 +6,7 @@ README="$ROOT_DIR/README.md"
 MAKEFILE="$ROOT_DIR/Makefile"
 GITIGNORE="$ROOT_DIR/.gitignore"
 DOCS_PLANS="$ROOT_DIR/docs/plans"
+WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 
 require_file() {
   path=$1
@@ -38,6 +39,32 @@ for path in \
   require_file "$path"
 done
 
+workflow_files=$(find "$ROOT_DIR/.github/workflows" -maxdepth 1 -type f -print | sort)
+if [ "$workflow_files" != "$WORKFLOW" ]; then
+  printf '%s\n%s\n' "Only the canonical check workflow may be present:" "$workflow_files" >&2
+  exit 1
+fi
+
+for workflow_contract in \
+  "permissions:" \
+  "contents: read" \
+  "persist-credentials: false"; do
+  if ! grep -Fq -- "$workflow_contract" "$WORKFLOW"; then
+    printf '%s\n' "Hosted verification is missing security contract: $workflow_contract" >&2
+    exit 1
+  fi
+done
+
+if grep -Eq '^[[:space:]]*[[:alnum:]_-]+:[[:space:]]*write([[:space:]]|$)' "$WORKFLOW"; then
+  printf '%s\n' "Hosted verification must not grant write permissions." >&2
+  exit 1
+fi
+
+if grep -Fq "pull_request_target:" "$WORKFLOW"; then
+  printf '%s\n' "Hosted verification must not run untrusted changes with pull_request_target." >&2
+  exit 1
+fi
+
 for provider_failure_contract in \
   "return dialPhone(phoneNumber, dialToken, Main::createTwilioCall)" \
   "static HttpResult dialPhone(String phoneNumber, String dialToken, CallSender callSender)" \
@@ -47,6 +74,19 @@ for provider_failure_contract in \
   if ! grep -Fq -- "$provider_failure_contract" "$ROOT_DIR/src/main/java/org/example/Main.java" && \
      ! grep -Fq -- "$provider_failure_contract" "$ROOT_DIR/src/test/java/org/example/MainTest.java"; then
     printf '%s\n' "Twilio provider failure contract is missing: $provider_failure_contract" >&2
+    exit 1
+  fi
+done
+
+for form_content_type_contract in \
+  "if (!isFormContentType(contentType))" \
+  '"application/x-www-form-urlencoded".equalsIgnoreCase(mediaType.trim())' \
+  "dialPhoneRouteRequiresTheExactFormMediaType" \
+  "application/x-www-form-urlencoded-evil" \
+  "Application/X-WWW-Form-Urlencoded; charset=UTF-8"; do
+  if ! grep -Fq -- "$form_content_type_contract" "$ROOT_DIR/src/main/java/org/example/Main.java" && \
+     ! grep -Fq -- "$form_content_type_contract" "$ROOT_DIR/src/test/java/org/example/MainTest.java"; then
+    printf '%s\n' "Form content-type contract is missing: $form_content_type_contract" >&2
     exit 1
   fi
 done

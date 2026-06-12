@@ -21,7 +21,8 @@ reach the main branch without running them.
 4. Pin Twilio's Jackson and Apache HttpCore transitives to the compatible fixed
    releases identified by hosted Snyk scanning.
 5. Add least-privilege GitHub Actions verification on Java 8, 11, 17, and 21
-   with immutable action pins and a bounded runtime.
+   with immutable action pins, non-persisted checkout credentials, a bounded
+   runtime, and rejection of additional workflow files.
 6. Add JUnit repository contracts for exact dependency versions and workflow
    security/compatibility settings.
 
