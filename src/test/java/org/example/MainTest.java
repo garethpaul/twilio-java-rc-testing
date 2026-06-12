@@ -213,6 +213,43 @@ public class MainTest {
     }
 
     @Test
+    public void dialPhoneRouteRequiresTheExactFormMediaType() throws Exception {
+        HttpServer server = Main.startServer(0);
+        try {
+            int port = server.getAddress().getPort();
+            HttpResponse missing = request(port, "POST", "/dial-phone", null);
+            HttpResponse unrelated = request(
+                    port,
+                    "POST",
+                    "/dial-phone",
+                    "number=invalid",
+                    "text/plain"
+            );
+            HttpResponse spoofed = request(
+                    port,
+                    "POST",
+                    "/dial-phone",
+                    "number=invalid",
+                    "application/x-www-form-urlencoded-evil"
+            );
+            HttpResponse parameterized = request(
+                    port,
+                    "POST",
+                    "/dial-phone",
+                    "number=invalid",
+                    "Application/X-WWW-Form-Urlencoded; charset=UTF-8"
+            );
+
+            assertEquals(415, missing.status);
+            assertEquals(415, unrelated.status);
+            assertEquals(415, spoofed.status);
+            assertEquals(400, parameterized.status);
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
     public void rootRouteServesTheUpdatedForm() throws Exception {
         HttpServer server = Main.startServer(0);
         try {
@@ -409,6 +446,22 @@ public class MainTest {
 
     private static HttpResponse request(int port, String method, String path, String body)
             throws Exception {
+        return request(
+                port,
+                method,
+                path,
+                body,
+                "application/x-www-form-urlencoded; charset=utf-8"
+        );
+    }
+
+    private static HttpResponse request(
+            int port,
+            String method,
+            String path,
+            String body,
+            String contentType
+    ) throws Exception {
         HttpURLConnection connection = (HttpURLConnection) new URL(
                 "http://127.0.0.1:" + port + path
         ).openConnection();
@@ -418,10 +471,9 @@ public class MainTest {
         if (body != null) {
             byte[] bodyBytes = body.getBytes(StandardCharsets.UTF_8);
             connection.setDoOutput(true);
-            connection.setRequestProperty(
-                    "Content-Type",
-                    "application/x-www-form-urlencoded; charset=utf-8"
-            );
+            if (contentType != null) {
+                connection.setRequestProperty("Content-Type", contentType);
+            }
             try (OutputStream output = connection.getOutputStream()) {
                 output.write(bodyBytes);
             }

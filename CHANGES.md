@@ -1,5 +1,11 @@
 # Changes
 
+## 2026-06-12
+
+- Required the exact `application/x-www-form-urlencoded` media type on the
+  dial route while accepting case-insensitive parameterized variants, with
+  loopback and fail-closed baseline coverage for spoofed content types.
+
 ## 2026-06-10
 
 - Converted Twilio SDK runtime failures into a generic HTTP 502 response and

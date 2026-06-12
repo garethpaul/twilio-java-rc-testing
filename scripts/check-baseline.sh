@@ -78,6 +78,19 @@ for provider_failure_contract in \
   fi
 done
 
+for form_content_type_contract in \
+  "if (!isFormContentType(contentType))" \
+  '"application/x-www-form-urlencoded".equalsIgnoreCase(mediaType.trim())' \
+  "dialPhoneRouteRequiresTheExactFormMediaType" \
+  "application/x-www-form-urlencoded-evil" \
+  "Application/X-WWW-Form-Urlencoded; charset=UTF-8"; do
+  if ! grep -Fq -- "$form_content_type_contract" "$ROOT_DIR/src/main/java/org/example/Main.java" && \
+     ! grep -Fq -- "$form_content_type_contract" "$ROOT_DIR/src/test/java/org/example/MainTest.java"; then
+    printf '%s\n' "Form content-type contract is missing: $form_content_type_contract" >&2
+    exit 1
+  fi
+done
+
 if ! grep -Fq '"$(ROOT)/scripts/check-baseline.sh"' "$MAKEFILE"; then
   printf '%s\n' "Makefile must run scripts/check-baseline.sh from make check." >&2
   exit 1

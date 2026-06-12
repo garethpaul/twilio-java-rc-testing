@@ -226,7 +226,7 @@ public class Main {
             return;
         }
         String contentType = exchange.getRequestHeaders().getFirst("Content-Type");
-        if (contentType == null || !contentType.startsWith("application/x-www-form-urlencoded")) {
+        if (!isFormContentType(contentType)) {
             sendResponse(exchange, 415, "text/plain; charset=utf-8", "Expected form data.");
             return;
         }
@@ -242,6 +242,17 @@ public class Main {
         }
         HttpResult result = dialPhone(phoneNumber, dialToken);
         sendResponse(exchange, result.status, "text/plain; charset=utf-8", result.body);
+    }
+
+    static boolean isFormContentType(String contentType) {
+        if (contentType == null) {
+            return false;
+        }
+        int parameterStart = contentType.indexOf(';');
+        String mediaType = parameterStart >= 0
+                ? contentType.substring(0, parameterStart)
+                : contentType;
+        return "application/x-www-form-urlencoded".equalsIgnoreCase(mediaType.trim());
     }
 
     private static void handleStaticContent(HttpExchange exchange) throws IOException {
