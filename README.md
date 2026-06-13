@@ -90,6 +90,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - Tests cover safe `PORT` parsing before the built-in HTTP server starts.
 - Tests cover dial-target redaction in response messages.
 - Tests require a constant-time authorization-token match before live dialing.
+  Live requests check that token before returning detailed Twilio credential,
+  sender, or callback-origin configuration errors; dry runs remain
+  unauthenticated and credential-free.
 - Tests require provider failures to return a generic `502` without leaking
   exception details.
 - Tests require oversized dial forms to return `413` before parsing or dialing.
@@ -148,6 +151,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   dependency cleanup coverage.
 - See `docs/plans/2026-06-10-dependencies-and-ci.md` for stable dependency and
   hosted Java matrix verification.
+- See `docs/plans/2026-06-13-live-dial-authorization-order.md` for the
+  authentication-first live request boundary.
 
 ## Contributing
 

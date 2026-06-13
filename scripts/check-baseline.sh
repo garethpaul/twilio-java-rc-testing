@@ -35,9 +35,33 @@ for path in \
   "docs/plans/2026-06-10-dependencies-and-ci.md" \
   "docs/plans/2026-06-10-http-response-headers.md" \
   "docs/plans/2026-06-10-provider-failure-response.md" \
+  "docs/plans/2026-06-13-live-dial-authorization-order.md" \
   "scripts/check-baseline.sh"; do
   require_file "$path"
 done
+
+for authorization_order_contract in \
+  'if (sendLive && isBlank(TWILIO_DIAL_TOKEN))' \
+  'if (sendLive && !authorizedDialToken(TWILIO_DIAL_TOKEN, dialToken))' \
+  'liveDialAuthorizationPrecedesProviderConfigurationValidation' \
+  'liveDialRouteDoesNotDiscloseProviderConfigurationBeforeAuthorization' \
+  'assertFalse(unauthorized.body.contains("TWILIO_"))'; do
+  if ! grep -Fq -- "$authorization_order_contract" "$ROOT_DIR/src/main/java/org/example/Main.java" && \
+     ! grep -Fq -- "$authorization_order_contract" "$ROOT_DIR/src/test/java/org/example/MainTest.java"; then
+    printf '%s\n' "Live dial authorization-order contract is missing: $authorization_order_contract" >&2
+    exit 1
+  fi
+done
+
+authorization_line=$(grep -nF 'if (sendLive && !authorizedDialToken(TWILIO_DIAL_TOKEN, dialToken))' \
+  "$ROOT_DIR/src/main/java/org/example/Main.java" | cut -d: -f1)
+configuration_line=$(grep -nF 'String configurationError = callConfigurationError(' \
+  "$ROOT_DIR/src/main/java/org/example/Main.java" | cut -d: -f1)
+if [ -z "$authorization_line" ] || [ -z "$configuration_line" ] || \
+   [ "$authorization_line" -ge "$configuration_line" ]; then
+  printf '%s\n' "Live dial authorization must precede provider configuration validation." >&2
+  exit 1
+fi
 
 workflow_files=$(find "$ROOT_DIR/.github/workflows" -maxdepth 1 -type f -print | sort)
 if [ "$workflow_files" != "$WORKFLOW" ]; then

@@ -26,6 +26,9 @@ Helpful reports include:
 
 - This repository appears to be a public sample, documentation, or utility project. The active security scope is the code and documentation on the default branch.
 - Review found authentication, token, or session-related code paths; changes in those areas should receive security-focused review before merge.
+- Live dial requests must authorize the per-request dial token before returning
+  detailed Twilio provider configuration errors. Dry-run requests intentionally
+  remain available without that token and do not create outbound calls.
 - Review found external API integrations or credential-adjacent configuration; changes in those areas should receive security-focused review before merge.
 - Review found network clients, sockets, web APIs, or service endpoints; changes in those areas should receive security-focused review before merge.
 - Review found mobile permission or privacy-sensitive data handling; changes in those areas should receive security-focused review before merge.
