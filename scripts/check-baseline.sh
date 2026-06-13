@@ -36,9 +36,45 @@ for path in \
   "docs/plans/2026-06-10-http-response-headers.md" \
   "docs/plans/2026-06-10-provider-failure-response.md" \
   "docs/plans/2026-06-13-live-dial-authorization-order.md" \
+  "docs/plans/2026-06-13-live-dial-rate-limit.md" \
   "scripts/check-baseline.sh"; do
   require_file "$path"
 done
+
+for rate_limit_contract in \
+  'private static final int MAX_LIVE_DIAL_ATTEMPTS = 5;' \
+  'private static final long LIVE_DIAL_WINDOW_MILLIS = 60_000L;' \
+  '!LIVE_DIAL_RATE_LIMITER.tryAcquire(currentTimeMillis.getAsLong())' \
+  'exchange.getResponseHeaders().set("Retry-After", "60")' \
+  'sendResponse(exchange, 429, "text/plain; charset=utf-8", "Too many live dial attempts.")' \
+  'liveDialRateLimiterAllowsFiveAttemptsAndResetsAfterOneMinute' \
+  'liveDialRouteRateLimitsBeforeReadingAnotherFormBody' \
+  'dryRunRouteIgnoresExhaustedLiveDialRateLimit'; do
+  if ! grep -Fq -- "$rate_limit_contract" "$ROOT_DIR/src/main/java/org/example/Main.java" && \
+     ! grep -Fq -- "$rate_limit_contract" "$ROOT_DIR/src/test/java/org/example/MainTest.java"; then
+    printf '%s\n' "Live dial rate-limit contract is missing: $rate_limit_contract" >&2
+    exit 1
+  fi
+done
+
+python3 - "$ROOT_DIR/src/main/java/org/example/Main.java" <<'PY'
+from pathlib import Path
+import sys
+
+source = Path(sys.argv[1]).read_text(encoding="utf-8")
+markers = (
+    'if (!isFormContentType(contentType))',
+    '&& !LIVE_DIAL_RATE_LIMITER.tryAcquire(currentTimeMillis.getAsLong()))',
+    'byte[] requestBody = readRequestBody(exchange);',
+    'dialToken = formValue(requestBody, "dialToken");',
+)
+positions = tuple(source.index(marker) for marker in markers)
+if positions != tuple(sorted(positions)):
+    raise SystemExit(
+        "Live dial rate limiting must follow media-type validation and precede "
+        "request-body parsing and token extraction."
+    )
+PY
 
 for authorization_order_contract in \
   'if (sendLive && isBlank(TWILIO_DIAL_TOKEN))' \

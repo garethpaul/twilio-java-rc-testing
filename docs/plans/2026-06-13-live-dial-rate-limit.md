@@ -1,6 +1,6 @@
 # Live Dial Rate Limit
 
-## Status: In Progress
+## Status: Completed
 
 ## Context
 
@@ -53,8 +53,11 @@ online token guessing and can amplify accidental or automated call attempts.
 
 ## Verification
 
-- Focused Maven tests and full `make check`
-- External-directory and space-containing-path `make check`
-- Hostile mutations removing, weakening, bypassing, or reordering the limiter
+- `mvn -q -Dtest=MainTest test` passed 35 focused tests.
+- Full local, external-directory, and space-containing-path `make check` runs
+  passed 40 tests, the package build, and the scripted baseline.
+- Nine hostile mutations covering raised limits, a longer window, removed or
+  dry-run-wide enforcement, missing retry metadata, wrong status, weakened
+  reset boundaries, late body ordering, and stale plan status were rejected.
 - Workflow YAML, XML, shell syntax, `git diff --check`, generated-artifact, and
-  focused secret review
+  focused secret reviews are included in final validation.

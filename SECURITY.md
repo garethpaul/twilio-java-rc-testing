@@ -41,6 +41,11 @@ Live `/dial-phone` requests require the separately configured
 `TWILIO_DIAL_TOKEN`. Use a high-entropy value, do not place it in URLs or source
 control, and rotate it if a submitted form or request log may have exposed it.
 
+The sample also permits at most five live dial attempts per process each
+minute, before form parsing or token comparison. This bounds token guessing and
+accidental call volume but is not a distributed control and does not replace
+Twilio account spend limits or deployment-level abuse protection.
+
 HTTP responses use `no-store`, framing denial, a no-referrer policy, a
 restrictive Content Security Policy, and disabled camera/geolocation/microphone
 capabilities. Keep these controls aligned with any future UI asset changes.
