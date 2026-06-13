@@ -283,6 +283,13 @@ public class Main {
         }
 
         boolean sendLive = shouldSendLive(TWILIO_SEND_LIVE);
+        if (sendLive && isBlank(TWILIO_DIAL_TOKEN)) {
+            return new HttpResult(503, "Missing required configuration: TWILIO_DIAL_TOKEN");
+        }
+        if (sendLive && !authorizedDialToken(TWILIO_DIAL_TOKEN, dialToken)) {
+            return new HttpResult(403, "Invalid dial authorization token.");
+        }
+
         String configurationError = callConfigurationError(
                 accountSid,
                 authToken,
@@ -295,12 +302,6 @@ public class Main {
         }
         if (!sendLive) {
             return new HttpResult(200, dialMessage(phoneNumber, true));
-        }
-        if (isBlank(TWILIO_DIAL_TOKEN)) {
-            return new HttpResult(503, "Missing required configuration: TWILIO_DIAL_TOKEN");
-        }
-        if (!authorizedDialToken(TWILIO_DIAL_TOKEN, dialToken)) {
-            return new HttpResult(403, "Invalid dial authorization token.");
         }
 
         PhoneNumber to = new PhoneNumber(phoneNumber.trim());

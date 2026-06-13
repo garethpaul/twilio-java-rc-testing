@@ -1,5 +1,11 @@
 # Changes
 
+## 2026-06-13
+
+- Authorized live dial requests before returning detailed Twilio credential,
+  sender, or callback-origin configuration errors, while preserving
+  unauthenticated dry runs.
+
 ## 2026-06-12
 
 - Required the exact `application/x-www-form-urlencoded` media type on the

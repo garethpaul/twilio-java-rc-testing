@@ -317,6 +317,88 @@ public class MainTest {
     }
 
     @Test
+    public void liveDialAuthorizationPrecedesProviderConfigurationValidation() {
+        String originalNumber = Main.twilioNumber;
+        String originalBaseUrl = Main.NGROK_BASE_URL;
+        String originalSendLive = Main.TWILIO_SEND_LIVE;
+        String originalDialToken = Main.TWILIO_DIAL_TOKEN;
+        String originalAccountSid = Main.accountSid;
+        String originalAuthToken = Main.authToken;
+        int[] senderCalls = {0};
+        try {
+            Main.twilioNumber = null;
+            Main.NGROK_BASE_URL = null;
+            Main.TWILIO_SEND_LIVE = "true";
+            Main.TWILIO_DIAL_TOKEN = "dial-secret";
+            Main.accountSid = null;
+            Main.authToken = null;
+
+            Main.HttpResult unauthorized = Main.dialPhone(
+                    "+15557654321",
+                    "wrong",
+                    (to, from, callbackUri) -> senderCalls[0]++
+            );
+            Main.HttpResult authorized = Main.dialPhone(
+                    "+15557654321",
+                    "dial-secret",
+                    (to, from, callbackUri) -> senderCalls[0]++
+            );
+
+            assertEquals(403, unauthorized.status);
+            assertEquals("Invalid dial authorization token.", unauthorized.body);
+            assertFalse(unauthorized.body.contains("TWILIO_"));
+            assertEquals(503, authorized.status);
+            assertTrue(authorized.body.contains("TWILIO_ACCOUNT_SID"));
+            assertEquals(0, senderCalls[0]);
+        } finally {
+            Main.twilioNumber = originalNumber;
+            Main.NGROK_BASE_URL = originalBaseUrl;
+            Main.TWILIO_SEND_LIVE = originalSendLive;
+            Main.TWILIO_DIAL_TOKEN = originalDialToken;
+            Main.accountSid = originalAccountSid;
+            Main.authToken = originalAuthToken;
+        }
+    }
+
+    @Test
+    public void liveDialRouteDoesNotDiscloseProviderConfigurationBeforeAuthorization() throws Exception {
+        String originalNumber = Main.twilioNumber;
+        String originalBaseUrl = Main.NGROK_BASE_URL;
+        String originalSendLive = Main.TWILIO_SEND_LIVE;
+        String originalDialToken = Main.TWILIO_DIAL_TOKEN;
+        String originalAccountSid = Main.accountSid;
+        String originalAuthToken = Main.authToken;
+        HttpServer server = Main.startServer(0);
+        try {
+            Main.twilioNumber = null;
+            Main.NGROK_BASE_URL = null;
+            Main.TWILIO_SEND_LIVE = "true";
+            Main.TWILIO_DIAL_TOKEN = "dial-secret";
+            Main.accountSid = null;
+            Main.authToken = null;
+
+            HttpResponse response = request(
+                    server.getAddress().getPort(),
+                    "POST",
+                    "/dial-phone",
+                    "number=%2B15557654321&dialToken=wrong"
+            );
+
+            assertEquals(403, response.status);
+            assertEquals("Invalid dial authorization token.", response.body);
+            assertFalse(response.body.contains("TWILIO_"));
+        } finally {
+            server.stop(0);
+            Main.twilioNumber = originalNumber;
+            Main.NGROK_BASE_URL = originalBaseUrl;
+            Main.TWILIO_SEND_LIVE = originalSendLive;
+            Main.TWILIO_DIAL_TOKEN = originalDialToken;
+            Main.accountSid = originalAccountSid;
+            Main.authToken = originalAuthToken;
+        }
+    }
+
+    @Test
     public void liveDialRejectsMissingOrIncorrectAuthorizationBeforeCallingTwilio() {
         String originalNumber = Main.twilioNumber;
         String originalBaseUrl = Main.NGROK_BASE_URL;
