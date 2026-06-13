@@ -1,6 +1,6 @@
 # Strict Dial Form Parsing
 
-## Status: Planned
+## Status: Completed
 
 ## Context
 
@@ -75,3 +75,31 @@ route ordering, tests, docs, and completed verification evidence.
   alter authorization and provider-configuration response precedence.
 - Do not reject unknown fields, add multipart/JSON support, change dependencies,
   or make live Twilio calls.
+
+## Work Completed
+
+- Replaced independent first-match extraction with one bounded `DialForm`
+  parsing pass for `number` and `dialToken`.
+- Rejected duplicate relevant fields, malformed relevant field names or values,
+  and missing separators with a generic HTTP 400 response.
+- Preserved unknown-field compatibility and the existing pre-body live rate
+  limit, then passed the parsed values into the unchanged authorization and
+  provider configuration path.
+- Added loopback integration coverage plus fail-closed source, ordering,
+  documentation, and completed-plan contracts.
+
+## Verification
+
+- The focused `MainTest` class passed 37 tests, including duplicate number,
+  duplicate token, malformed name/value, generic response, live configuration
+  nondisclosure, and accepted unknown-field cases.
+- Full repository and external-working-directory `make check` passed under
+  explicit hard timeouts, including compilation, all JUnit tests, packaging,
+  dependency/security baseline checks, and the executable jar assembly.
+- Focused hostile mutations for each duplicate guard, malformed decoding,
+  parser and rate-limit ordering, unknown-field compatibility, response text,
+  route tests, documentation, and plan status were rejected.
+- Maven XML, workflow YAML, shell syntax, Java compilation, intended-path,
+  generated-artifact, `git diff --check`, and changed-line secret audits passed
+  before shipment.
+- No Twilio credentials, live calls, or external callback requests were used.

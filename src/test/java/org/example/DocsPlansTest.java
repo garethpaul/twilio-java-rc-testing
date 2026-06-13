@@ -30,6 +30,8 @@ public class DocsPlansTest {
             DOCS_PLANS.resolve("2026-06-10-http-response-headers.md");
     private static final Path LIVE_DIAL_RATE_LIMIT_PLAN =
             DOCS_PLANS.resolve("2026-06-13-live-dial-rate-limit.md");
+    private static final Path STRICT_DIAL_FORM_PLAN =
+            DOCS_PLANS.resolve("2026-06-13-strict-dial-form-parsing.md");
 
     @Test
     public void canonicalPlanIsCompletedAndVerified() throws IOException {
@@ -55,6 +57,7 @@ public class DocsPlansTest {
         );
         assertTrue("HTTP response headers plan must exist", plans.contains(HTTP_RESPONSE_HEADERS_PLAN));
         assertTrue("live dial rate-limit plan must exist", plans.contains(LIVE_DIAL_RATE_LIMIT_PLAN));
+        assertTrue("strict dial form plan must exist", plans.contains(STRICT_DIAL_FORM_PLAN));
 
         for (Path plan : plans) {
             String text = new String(Files.readAllBytes(plan), StandardCharsets.UTF_8);
