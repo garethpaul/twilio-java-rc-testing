@@ -32,6 +32,8 @@ Priority:
 - Require per-request authorization before any live dial attempt
 - Authorize live requests before disclosing provider configuration details
 - Bound live dial attempts before form parsing or authorization checks
+- Reject duplicate or malformed security-relevant dial form fields before
+  authorization and provider configuration
 - Keep Twilio provider failure diagnostics out of HTTP responses
 - Keep every HTTP response non-cacheable, non-frameable, and constrained by a
   restrictive browser security policy

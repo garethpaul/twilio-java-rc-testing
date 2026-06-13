@@ -63,6 +63,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   checked-in form marks the phone number field as required before submission.
 - Twilio SDK failures return a generic `502` response without exposing provider
   diagnostics, credentials, or request metadata.
+- Duplicate `number` or `dialToken` fields and malformed percent encoding are
+  rejected with a generic `400` before authorization or provider setup; unknown
+  form fields remain ignored for browser compatibility.
 - `NGROK_URL` must be a valid HTTPS origin URL with a host, without path,
   query, fragment, or userinfo, before the app builds a TwiML callback URL.
 - The `/twiml` route returns TwiML XML with an explicit `application/xml`
@@ -99,6 +102,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - Tests require provider failures to return a generic `502` without leaking
   exception details.
 - Tests require oversized dial forms to return `413` before parsing or dialing.
+- Tests require one-pass dial-form parsing to reject duplicate relevant fields
+  and malformed percent encoding before authorization or provider setup.
 - Tests require `/dial-phone` to accept the exact form media type, including
   case-insensitive parameterized variants, while rejecting missing, unrelated,
   and spoofed-prefix content types with `415`.

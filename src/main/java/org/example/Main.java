@@ -242,17 +242,18 @@ public class Main {
             sendResponse(exchange, 429, "text/plain; charset=utf-8", "Too many live dial attempts.");
             return;
         }
-        String phoneNumber;
-        String dialToken;
+        DialForm dialForm;
         try {
             byte[] requestBody = readRequestBody(exchange);
-            phoneNumber = formValue(requestBody, "number");
-            dialToken = formValue(requestBody, "dialToken");
+            dialForm = parseDialForm(requestBody);
         } catch (RequestTooLargeException requestTooLargeException) {
             sendResponse(exchange, 413, "text/plain; charset=utf-8", "Form submission is too large.");
             return;
+        } catch (InvalidFormException invalidFormException) {
+            sendResponse(exchange, 400, "text/plain; charset=utf-8", "Invalid form submission.");
+            return;
         }
-        HttpResult result = dialPhone(phoneNumber, dialToken);
+        HttpResult result = dialPhone(dialForm.phoneNumber, dialForm.dialToken);
         sendResponse(exchange, result.status, "text/plain; charset=utf-8", result.body);
     }
 
@@ -359,15 +360,39 @@ public class Main {
         }
     }
 
-    private static String formValue(byte[] body, String expectedName) {
+    private static DialForm parseDialForm(byte[] body) throws InvalidFormException {
         String form = new String(body, StandardCharsets.UTF_8);
+        String phoneNumber = null;
+        String dialToken = null;
         for (String pair : form.split("&")) {
             String[] parts = pair.split("=", 2);
-            if (parts.length == 2 && expectedName.equals(decodeFormComponent(parts[0]))) {
-                return decodeFormComponent(parts[1]);
+            String name = decodeFormComponent(parts[0]);
+            if (name == null) {
+                throw new InvalidFormException();
+            }
+            if (!"number".equals(name) && !"dialToken".equals(name)) {
+                continue;
+            }
+            if (parts.length != 2) {
+                throw new InvalidFormException();
+            }
+            String value = decodeFormComponent(parts[1]);
+            if (value == null) {
+                throw new InvalidFormException();
+            }
+            if ("number".equals(name)) {
+                if (phoneNumber != null) {
+                    throw new InvalidFormException();
+                }
+                phoneNumber = value;
+            } else {
+                if (dialToken != null) {
+                    throw new InvalidFormException();
+                }
+                dialToken = value;
             }
         }
-        return null;
+        return new DialForm(phoneNumber, dialToken);
     }
 
     private static String decodeFormComponent(String value) {
@@ -412,6 +437,16 @@ public class Main {
         }
     }
 
+    private static final class DialForm {
+        final String phoneNumber;
+        final String dialToken;
+
+        DialForm(String phoneNumber, String dialToken) {
+            this.phoneNumber = phoneNumber;
+            this.dialToken = dialToken;
+        }
+    }
+
     static final class LiveDialRateLimiter {
         private final int maxAttempts;
         private final long windowMillis;
@@ -449,6 +484,9 @@ public class Main {
     }
 
     private static final class RequestTooLargeException extends Exception {
+    }
+
+    private static final class InvalidFormException extends Exception {
     }
 
     public static void main(String[] args) throws IOException {

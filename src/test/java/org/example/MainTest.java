@@ -250,6 +250,77 @@ public class MainTest {
     }
 
     @Test
+    public void dialPhoneRouteRejectsAmbiguousOrMalformedRelevantFormFields() throws Exception {
+        String originalNumber = Main.twilioNumber;
+        String originalBaseUrl = Main.NGROK_BASE_URL;
+        String originalSendLive = Main.TWILIO_SEND_LIVE;
+        String originalDialToken = Main.TWILIO_DIAL_TOKEN;
+        String originalAccountSid = Main.accountSid;
+        String originalAuthToken = Main.authToken;
+        Main.resetLiveDialRateLimit();
+        HttpServer server = Main.startServer(0);
+        try {
+            Main.twilioNumber = "+15551234567";
+            Main.NGROK_BASE_URL = "https://example.ngrok.io";
+            Main.TWILIO_SEND_LIVE = "true";
+            Main.TWILIO_DIAL_TOKEN = "dial-secret";
+            Main.accountSid = null;
+            Main.authToken = null;
+            int port = server.getAddress().getPort();
+
+            String[] invalidBodies = {
+                    "number=%2B15557654321&number=%2B15550000000&dialToken=dial-secret",
+                    "number=%2B15557654321&dialToken=dial-secret&dialToken=wrong",
+                    "num%ZZber=%2B15557654321&dialToken=dial-secret",
+                    "number=%ZZ&dialToken=dial-secret"
+            };
+            for (String body : invalidBodies) {
+                HttpResponse response = request(port, "POST", "/dial-phone", body);
+                assertEquals(400, response.status);
+                assertEquals("Invalid form submission.", response.body);
+                assertFalse(response.body.contains("TWILIO_"));
+            }
+        } finally {
+            server.stop(0);
+            Main.twilioNumber = originalNumber;
+            Main.NGROK_BASE_URL = originalBaseUrl;
+            Main.TWILIO_SEND_LIVE = originalSendLive;
+            Main.TWILIO_DIAL_TOKEN = originalDialToken;
+            Main.accountSid = originalAccountSid;
+            Main.authToken = originalAuthToken;
+            Main.resetLiveDialRateLimit();
+        }
+    }
+
+    @Test
+    public void dialPhoneRouteIgnoresUnknownFormFields() throws Exception {
+        String originalNumber = Main.twilioNumber;
+        String originalBaseUrl = Main.NGROK_BASE_URL;
+        String originalSendLive = Main.TWILIO_SEND_LIVE;
+        HttpServer server = Main.startServer(0);
+        try {
+            Main.twilioNumber = "+15551234567";
+            Main.NGROK_BASE_URL = "https://example.ngrok.io";
+            Main.TWILIO_SEND_LIVE = "false";
+
+            HttpResponse response = request(
+                    server.getAddress().getPort(),
+                    "POST",
+                    "/dial-phone",
+                    "number=%2B15557654321&submit=Dial"
+            );
+
+            assertEquals(200, response.status);
+            assertTrue(response.body.startsWith("Dry run: would dial "));
+        } finally {
+            server.stop(0);
+            Main.twilioNumber = originalNumber;
+            Main.NGROK_BASE_URL = originalBaseUrl;
+            Main.TWILIO_SEND_LIVE = originalSendLive;
+        }
+    }
+
+    @Test
     public void rootRouteServesTheUpdatedForm() throws Exception {
         HttpServer server = Main.startServer(0);
         try {

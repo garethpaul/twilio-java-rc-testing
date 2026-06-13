@@ -37,6 +37,7 @@ for path in \
   "docs/plans/2026-06-10-provider-failure-response.md" \
   "docs/plans/2026-06-13-live-dial-authorization-order.md" \
   "docs/plans/2026-06-13-live-dial-rate-limit.md" \
+  "docs/plans/2026-06-13-strict-dial-form-parsing.md" \
   "scripts/check-baseline.sh"; do
   require_file "$path"
 done
@@ -66,7 +67,8 @@ markers = (
     'if (!isFormContentType(contentType))',
     '&& !LIVE_DIAL_RATE_LIMITER.tryAcquire(currentTimeMillis.getAsLong()))',
     'byte[] requestBody = readRequestBody(exchange);',
-    'dialToken = formValue(requestBody, "dialToken");',
+    'dialForm = parseDialForm(requestBody);',
+    'HttpResult result = dialPhone(dialForm.phoneNumber, dialForm.dialToken);',
 )
 positions = tuple(source.index(marker) for marker in markers)
 if positions != tuple(sorted(positions)):
@@ -74,6 +76,54 @@ if positions != tuple(sorted(positions)):
         "Live dial rate limiting must follow media-type validation and precede "
         "request-body parsing and token extraction."
     )
+PY
+
+for strict_form_contract in \
+  'private static DialForm parseDialForm(byte[] body) throws InvalidFormException' \
+  'String name = decodeFormComponent(parts[0]);' \
+  'if (name == null)' \
+  'if (!"number".equals(name) && !"dialToken".equals(name))' \
+  'String value = decodeFormComponent(parts[1]);' \
+  'if (value == null)' \
+  'if (phoneNumber != null)' \
+  'if (dialToken != null)' \
+  'throw new InvalidFormException();' \
+  'sendResponse(exchange, 400, "text/plain; charset=utf-8", "Invalid form submission.")' \
+  'dialPhoneRouteRejectsAmbiguousOrMalformedRelevantFormFields' \
+  'dialPhoneRouteIgnoresUnknownFormFields'; do
+  if ! grep -Fq -- "$strict_form_contract" "$ROOT_DIR/src/main/java/org/example/Main.java" && \
+     ! grep -Fq -- "$strict_form_contract" "$ROOT_DIR/src/test/java/org/example/MainTest.java"; then
+    printf '%s\n' "Strict dial form contract is missing: $strict_form_contract" >&2
+    exit 1
+  fi
+done
+
+if grep -Fq 'formValue(' "$ROOT_DIR/src/main/java/org/example/Main.java"; then
+  printf '%s\n' "Dial form fields must be parsed together instead of first-match extraction." >&2
+  exit 1
+fi
+
+python3 - "$ROOT_DIR/src/main/java/org/example/Main.java" <<'PY'
+from pathlib import Path
+import re
+import sys
+
+source = Path(sys.argv[1]).read_text(encoding="utf-8")
+parser = re.search(
+    r"private static DialForm parseDialForm\(byte\[] body\) throws InvalidFormException \{"
+    r"(?P<body>.*?)\n    \}",
+    source,
+    re.DOTALL,
+)
+if parser is None:
+    raise SystemExit("Strict dial form parser body must remain explicit.")
+body = parser.group("body")
+unknown = re.search(
+    r'if \(!"number"\.equals\(name\) && !"dialToken"\.equals\(name\)\) \{\s*continue;\s*\}',
+    body,
+)
+if unknown is None:
+    raise SystemExit("Unknown dial form fields must remain ignored.")
 PY
 
 for authorization_order_contract in \
