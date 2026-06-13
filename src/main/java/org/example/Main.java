@@ -22,6 +22,7 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.LongSupplier;
 import java.util.regex.Pattern;
 
 public class Main {
@@ -33,6 +34,11 @@ public class Main {
     static String TWILIO_DIAL_TOKEN = System.getenv("TWILIO_DIAL_TOKEN");
     private static final Pattern E164_PHONE_NUMBER = Pattern.compile("^\\+[1-9]\\d{1,14}$");
     private static final int MAX_FORM_BYTES = 8 * 1024;
+    private static final int MAX_LIVE_DIAL_ATTEMPTS = 5;
+    private static final long LIVE_DIAL_WINDOW_MILLIS = 60_000L;
+    private static final LiveDialRateLimiter LIVE_DIAL_RATE_LIMITER =
+            new LiveDialRateLimiter(MAX_LIVE_DIAL_ATTEMPTS, LIVE_DIAL_WINDOW_MILLIS);
+    static LongSupplier currentTimeMillis = System::currentTimeMillis;
     interface CallSender {
         void create(PhoneNumber to, PhoneNumber from, URI callbackUri);
     }
@@ -230,6 +236,12 @@ public class Main {
             sendResponse(exchange, 415, "text/plain; charset=utf-8", "Expected form data.");
             return;
         }
+        if (shouldSendLive(TWILIO_SEND_LIVE)
+                && !LIVE_DIAL_RATE_LIMITER.tryAcquire(currentTimeMillis.getAsLong())) {
+            exchange.getResponseHeaders().set("Retry-After", "60");
+            sendResponse(exchange, 429, "text/plain; charset=utf-8", "Too many live dial attempts.");
+            return;
+        }
         String phoneNumber;
         String dialToken;
         try {
@@ -398,6 +410,42 @@ public class Main {
             this.status = status;
             this.body = body;
         }
+    }
+
+    static final class LiveDialRateLimiter {
+        private final int maxAttempts;
+        private final long windowMillis;
+        private long windowStartedAt = Long.MIN_VALUE;
+        private int attempts;
+
+        LiveDialRateLimiter(int maxAttempts, long windowMillis) {
+            this.maxAttempts = maxAttempts;
+            this.windowMillis = windowMillis;
+        }
+
+        synchronized boolean tryAcquire(long nowMillis) {
+            if (windowStartedAt == Long.MIN_VALUE
+                    || nowMillis < windowStartedAt
+                    || nowMillis - windowStartedAt >= windowMillis) {
+                windowStartedAt = nowMillis;
+                attempts = 0;
+            }
+            if (attempts >= maxAttempts) {
+                return false;
+            }
+            attempts++;
+            return true;
+        }
+
+        synchronized void reset() {
+            windowStartedAt = Long.MIN_VALUE;
+            attempts = 0;
+        }
+    }
+
+    static void resetLiveDialRateLimit() {
+        LIVE_DIAL_RATE_LIMITER.reset();
+        currentTimeMillis = System::currentTimeMillis;
     }
 
     private static final class RequestTooLargeException extends Exception {

@@ -2,6 +2,10 @@
 
 ## 2026-06-13
 
+- Limited live dial requests to five attempts per process each minute before
+  body parsing or token comparison, with `429` and `Retry-After` responses.
+- Added deterministic window, route-ordering, response-header, and dry-run
+  independence coverage for the live-attempt boundary.
 - Authorized live dial requests before returning detailed Twilio credential,
   sender, or callback-origin configuration errors, while preserving
   unauthenticated dry runs.

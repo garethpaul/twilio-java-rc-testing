@@ -93,6 +93,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   Live requests check that token before returning detailed Twilio credential,
   sender, or callback-origin configuration errors; dry runs remain
   unauthenticated and credential-free.
+- Tests limit the process to five live dial attempts per minute before form
+  parsing or token comparison. Exhausted requests return `429` with
+  `Retry-After: 60`; dry runs are not rate-limited.
 - Tests require provider failures to return a generic `502` without leaking
   exception details.
 - Tests require oversized dial forms to return `413` before parsing or dialing.

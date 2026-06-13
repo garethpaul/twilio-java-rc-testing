@@ -399,6 +399,89 @@ public class MainTest {
     }
 
     @Test
+    public void liveDialRateLimiterAllowsFiveAttemptsAndResetsAfterOneMinute() {
+        Main.LiveDialRateLimiter limiter = new Main.LiveDialRateLimiter(5, 60_000L);
+
+        for (int attempt = 0; attempt < 5; attempt++) {
+            assertTrue(limiter.tryAcquire(1_000L));
+        }
+        assertFalse(limiter.tryAcquire(60_999L));
+        assertTrue(limiter.tryAcquire(61_000L));
+    }
+
+    @Test
+    public void liveDialRouteRateLimitsBeforeReadingAnotherFormBody() throws Exception {
+        String originalSendLive = Main.TWILIO_SEND_LIVE;
+        String originalDialToken = Main.TWILIO_DIAL_TOKEN;
+        Main.resetLiveDialRateLimit();
+        Main.currentTimeMillis = () -> 1_000L;
+        HttpServer server = Main.startServer(0);
+        try {
+            Main.TWILIO_SEND_LIVE = "true";
+            Main.TWILIO_DIAL_TOKEN = "dial-secret";
+            int port = server.getAddress().getPort();
+            for (int attempt = 0; attempt < 5; attempt++) {
+                String token = attempt == 0 ? "dial-secret" : "wrong";
+                HttpResponse response = request(
+                        port,
+                        "POST",
+                        "/dial-phone",
+                        "number=%2B15557654321&dialToken=" + token
+                );
+                assertEquals(attempt == 0 ? 503 : 403, response.status);
+            }
+
+            String oversizedBody = "number=%2B15557654321&dialToken=" + repeat("x", 9 * 1024);
+            HttpResponse limited = request(port, "POST", "/dial-phone", oversizedBody);
+
+            assertEquals(429, limited.status);
+            assertEquals("60", limited.retryAfter);
+            assertEquals("Too many live dial attempts.", limited.body);
+        } finally {
+            server.stop(0);
+            Main.TWILIO_SEND_LIVE = originalSendLive;
+            Main.TWILIO_DIAL_TOKEN = originalDialToken;
+            Main.resetLiveDialRateLimit();
+        }
+    }
+
+    @Test
+    public void dryRunRouteIgnoresExhaustedLiveDialRateLimit() throws Exception {
+        String originalNumber = Main.twilioNumber;
+        String originalBaseUrl = Main.NGROK_BASE_URL;
+        String originalSendLive = Main.TWILIO_SEND_LIVE;
+        Main.resetLiveDialRateLimit();
+        Main.currentTimeMillis = () -> 1_000L;
+        HttpServer server = Main.startServer(0);
+        try {
+            Main.twilioNumber = "+15551234567";
+            Main.NGROK_BASE_URL = "https://example.ngrok.io";
+            Main.TWILIO_SEND_LIVE = "true";
+            int port = server.getAddress().getPort();
+            for (int attempt = 0; attempt < 5; attempt++) {
+                request(port, "POST", "/dial-phone", "number=%2B15557654321");
+            }
+
+            Main.TWILIO_SEND_LIVE = "false";
+            HttpResponse dryRun = request(
+                    port,
+                    "POST",
+                    "/dial-phone",
+                    "number=%2B15557654321"
+            );
+
+            assertEquals(200, dryRun.status);
+            assertTrue(dryRun.body.startsWith("Dry run:"));
+        } finally {
+            server.stop(0);
+            Main.twilioNumber = originalNumber;
+            Main.NGROK_BASE_URL = originalBaseUrl;
+            Main.TWILIO_SEND_LIVE = originalSendLive;
+            Main.resetLiveDialRateLimit();
+        }
+    }
+
+    @Test
     public void liveDialRejectsMissingOrIncorrectAuthorizationBeforeCallingTwilio() {
         String originalNumber = Main.twilioNumber;
         String originalBaseUrl = Main.NGROK_BASE_URL;
@@ -575,6 +658,7 @@ public class MainTest {
                 connection.getHeaderField("Permissions-Policy"),
                 connection.getHeaderField("Referrer-Policy"),
                 connection.getHeaderField("X-Frame-Options"),
+                connection.getHeaderField("Retry-After"),
                 responseBody
         );
         connection.disconnect();
@@ -601,6 +685,7 @@ public class MainTest {
         final String permissionsPolicy;
         final String referrerPolicy;
         final String frameOptions;
+        final String retryAfter;
         final String body;
 
         HttpResponse(
@@ -612,6 +697,7 @@ public class MainTest {
                 String permissionsPolicy,
                 String referrerPolicy,
                 String frameOptions,
+                String retryAfter,
                 String body
         ) {
             this.status = status;
@@ -622,7 +708,16 @@ public class MainTest {
             this.permissionsPolicy = permissionsPolicy;
             this.referrerPolicy = referrerPolicy;
             this.frameOptions = frameOptions;
+            this.retryAfter = retryAfter;
             this.body = body;
         }
+    }
+
+    private static String repeat(String value, int count) {
+        StringBuilder builder = new StringBuilder();
+        for (int index = 0; index < count; index++) {
+            builder.append(value);
+        }
+        return builder.toString();
     }
 }
