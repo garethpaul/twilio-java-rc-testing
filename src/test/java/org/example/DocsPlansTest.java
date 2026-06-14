@@ -136,6 +136,11 @@ public class DocsPlansTest {
         assertTrue(workflow.contains("runs-on: ubuntu-24.04"));
         assertTrue(workflow.contains("timeout-minutes: 10"));
         assertTrue(workflow.contains("java-version: [\"8\", \"11\", \"17\", \"21\"]"));
+        assertFalse("push verification must cover all branches", workflow.contains("branches:"));
+        assertTrue(
+                "workflow must keep pull request, all-branch push, and manual events contiguous",
+                workflow.contains("  pull_request:\n  push:\n  workflow_dispatch:")
+        );
         assertTrue(workflow.contains("workflow_dispatch:"));
         assertTrue(workflow.contains("actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3"));
         assertTrue(workflow.contains("actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.1.0"));

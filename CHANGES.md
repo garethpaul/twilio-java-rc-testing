@@ -2,6 +2,8 @@
 
 ## 2026-06-14
 
+- Expanded the canonical Java verification matrix from `main`-only pushes to
+  all branch pushes, with shell and JUnit guards against branch filters.
 - Documented Java 8 source compatibility, hosted Java 8/11/17/21 verification,
   Maven 3.6.3 as a reproduced local baseline, and the exact Twilio Java 12.1.1
   pin without claiming unverified minimum tool versions.

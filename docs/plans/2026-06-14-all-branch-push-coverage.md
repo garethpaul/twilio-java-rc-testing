@@ -1,6 +1,6 @@
 # All-Branch Push Coverage
 
-## Status: In Progress
+## Status: Completed
 
 ## Context
 
@@ -27,6 +27,16 @@ branch without changing permissions, action pins, or test coverage.
 - Run repository and external-directory `make check`.
 - Prove a mutation restoring `push.branches` is rejected.
 - Audit the exact diff, generated artifacts, credentials, and whitespace.
+
+## Verification
+
+- The focused `DocsPlansTest` suite passed all six repository-contract tests.
+- Repository and external-directory `make check` passed all 43 tests with no
+  failures, errors, or skips.
+- An isolated mutation restoring `push.branches: main` was rejected by both the
+  POSIX shell baseline and the JUnit workflow contract.
+- Final exact-diff, generated-artifact, credential, and whitespace audits
+  passed. Hosted push and pull-request checks remain the exact-head authority.
 
 ## Scope Boundary
 

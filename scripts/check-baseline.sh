@@ -38,6 +38,7 @@ for path in \
   "docs/plans/2026-06-13-live-dial-authorization-order.md" \
   "docs/plans/2026-06-13-live-dial-rate-limit.md" \
   "docs/plans/2026-06-13-strict-dial-form-parsing.md" \
+  "docs/plans/2026-06-14-all-branch-push-coverage.md" \
   "docs/plans/2026-06-14-make-root-override-protection.md" \
   "docs/plans/2026-06-14-supported-toolchain-versions.md" \
   "scripts/check-baseline.sh"; do
@@ -238,6 +239,21 @@ if grep -Fq "pull_request_target:" "$WORKFLOW"; then
   printf '%s\n' "Hosted verification must not run untrusted changes with pull_request_target." >&2
   exit 1
 fi
+
+if grep -Fq "branches:" "$WORKFLOW"; then
+  printf '%s\n' "Hosted push verification must cover all branches." >&2
+  exit 1
+fi
+
+for event_contract in \
+  "  pull_request:" \
+  "  push:" \
+  "  workflow_dispatch:"; do
+  if ! grep -Fxq -- "$event_contract" "$WORKFLOW"; then
+    printf '%s\n' "Hosted verification is missing canonical event: $event_contract" >&2
+    exit 1
+  fi
+done
 
 for provider_failure_contract in \
   "return dialPhone(phoneNumber, dialToken, Main::createTwilioCall)" \
