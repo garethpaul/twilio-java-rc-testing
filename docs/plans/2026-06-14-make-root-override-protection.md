@@ -1,6 +1,6 @@
 # Make Root Override Protection
 
-## Status: Planned
+## Status: Completed
 
 ## Context
 
@@ -68,3 +68,29 @@ hostile-root invocations, mutations, and repository audits pass.
 - Do not alter Java sources, runtime behavior, dependencies, workflow coverage,
   or live Twilio safeguards.
 - Do not merge or close any stacked pull request without owner authorization.
+
+## Work Completed
+
+- Protected the Makefile-derived repository root with GNU Make's `override`
+  directive while preserving the configurable Maven command.
+- Added shell and JUnit contracts for the exact protected assignment, the
+  Makefile-derived path, and the Maven override.
+- Added the plan to the repository's required maintenance-document set.
+
+## Verification
+
+- The focused `DocsPlansTest#checkGateRunsScriptedBaseline` test passed on
+  Amazon Corretto 8 with Maven 3.6.3.
+- A hostile `make ROOT=<empty-directory> lint` invocation ignored the supplied
+  root and compiled the intended checkout.
+- Full `make check`, external-working-directory `make -C <checkout> check`, and
+  hostile `make -C <checkout> ROOT=<empty-directory> check` each passed under
+  a 300-second timeout, including compilation, 42 JUnit tests, packaging, and
+  the scripted baseline.
+- Eight hostile mutations were rejected: removing `override`, using `CURDIR`,
+  changing to recursive assignment, deriving from the first loaded Makefile,
+  removing Maven configurability, weakening either static guard, and removing
+  completed plan status.
+- Makefile, shell, Java, intended-path, generated-artifact, `git diff --check`,
+  and changed-line secret audits passed before shipment.
+- No Twilio credentials, live calls, or external callback requests were used.
