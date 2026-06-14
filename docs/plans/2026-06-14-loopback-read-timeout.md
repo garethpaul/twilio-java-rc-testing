@@ -1,6 +1,6 @@
 # Loopback Integration Read Timeout
 
-## Status: In Progress
+## Status: Completed
 
 ## Context
 
@@ -28,6 +28,20 @@ initialization on a contended hosted runner.
 - Run repository and external-directory `make check`.
 - Prove restoring the two-second timeout is rejected.
 - Audit the exact diff, generated artifacts, credentials, and whitespace.
+
+## Verification
+
+- The affected TwiML route test passed in ten fresh Maven invocations on the
+  available Java 8 baseline.
+- The focused repository contracts passed all seven tests.
+- Repository and external-directory `make check` passed all 44 tests with no
+  failures, errors, or skips.
+- An isolated mutation restoring a two-second loopback timeout was rejected by
+  both the POSIX shell baseline and the JUnit repository contract.
+- Java 11 remains the hosted authority for the originally failing runtime; the
+  final exact-head push and pull-request matrices are required before closure.
+- Final exact-diff, generated-artifact, credential, and whitespace audits
+  passed.
 
 ## Scope Boundary
 

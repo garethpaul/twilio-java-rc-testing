@@ -170,6 +170,16 @@ public class DocsPlansTest {
         assertTrue(workflow.contains("java-version: [\"8\", \"11\", \"17\", \"21\"]"));
     }
 
+    @Test
+    public void loopbackIntegrationTimeoutRemainsBoundedAndColdStartSafe() throws IOException {
+        String tests = read("src/test/java/org/example/MainTest.java");
+
+        assertTrue(tests.contains("private static final int LOOPBACK_TIMEOUT_MILLIS = 10_000;"));
+        assertTrue(tests.contains("connection.setConnectTimeout(LOOPBACK_TIMEOUT_MILLIS);"));
+        assertTrue(tests.contains("connection.setReadTimeout(LOOPBACK_TIMEOUT_MILLIS);"));
+        assertFalse(tests.contains("setReadTimeout(2000)"));
+    }
+
     private static String read(String relativePath) throws IOException {
         return new String(
                 Files.readAllBytes(REPO_ROOT.resolve(relativePath)),

@@ -39,10 +39,21 @@ for path in \
   "docs/plans/2026-06-13-live-dial-rate-limit.md" \
   "docs/plans/2026-06-13-strict-dial-form-parsing.md" \
   "docs/plans/2026-06-14-all-branch-push-coverage.md" \
+  "docs/plans/2026-06-14-loopback-read-timeout.md" \
   "docs/plans/2026-06-14-make-root-override-protection.md" \
   "docs/plans/2026-06-14-supported-toolchain-versions.md" \
   "scripts/check-baseline.sh"; do
   require_file "$path"
+done
+
+for loopback_timeout_contract in \
+  'private static final int LOOPBACK_TIMEOUT_MILLIS = 10_000;' \
+  'connection.setConnectTimeout(LOOPBACK_TIMEOUT_MILLIS);' \
+  'connection.setReadTimeout(LOOPBACK_TIMEOUT_MILLIS);'; do
+  if ! grep -Fq -- "$loopback_timeout_contract" "$ROOT_DIR/src/test/java/org/example/MainTest.java"; then
+    printf '%s\n' "Loopback integration timeout contract is missing: $loopback_timeout_contract" >&2
+    exit 1
+  fi
 done
 
 for supported_version_contract in \

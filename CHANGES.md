@@ -2,6 +2,8 @@
 
 ## 2026-06-14
 
+- Stabilized cold-start loopback integration tests with one bounded ten-second
+  connection/read timeout and fail-closed shell and JUnit contracts.
 - Expanded the canonical Java verification matrix from `main`-only pushes to
   all branch pushes, with shell and JUnit guards against branch filters.
 - Documented Java 8 source compatibility, hosted Java 8/11/17/21 verification,
