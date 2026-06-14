@@ -34,6 +34,10 @@ Priority:
 - Bound live dial attempts before form parsing or authorization checks
 - Reject duplicate or malformed security-relevant dial form fields before
   authorization and provider configuration
+- Keep loopback integration coverage around request limits and malformed forms
+- Keep the injectable Twilio call-sender boundary covered by local tests
+- Keep Java, Maven, and Twilio SDK support claims tied to executable repository
+  evidence
 - Keep Twilio provider failure diagnostics out of HTTP responses
 - Keep every HTTP response non-cacheable, non-frameable, and constrained by a
   restrictive browser security policy
@@ -42,9 +46,6 @@ Priority:
 
 Next priorities:
 
-- Expand integration-test coverage around request limits and malformed forms
-- Add a mock Twilio client path for local tests
-- Document supported Java, Maven, and Twilio SDK versions
 - Add explicit debug-log redaction guidance
 
 Contribution rules:
