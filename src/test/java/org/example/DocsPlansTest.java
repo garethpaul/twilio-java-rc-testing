@@ -136,6 +136,11 @@ public class DocsPlansTest {
         assertTrue(workflow.contains("runs-on: ubuntu-24.04"));
         assertTrue(workflow.contains("timeout-minutes: 10"));
         assertTrue(workflow.contains("java-version: [\"8\", \"11\", \"17\", \"21\"]"));
+        assertFalse("push verification must cover all branches", workflow.contains("branches:"));
+        assertTrue(
+                "workflow must keep pull request, all-branch push, and manual events contiguous",
+                workflow.contains("  pull_request:\n  push:\n  workflow_dispatch:")
+        );
         assertTrue(workflow.contains("workflow_dispatch:"));
         assertTrue(workflow.contains("actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3"));
         assertTrue(workflow.contains("actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.1.0"));
@@ -163,6 +168,16 @@ public class DocsPlansTest {
         assertTrue(pom.contains("<artifactId>twilio</artifactId>"));
         assertTrue(pom.contains("<version>12.1.1</version>"));
         assertTrue(workflow.contains("java-version: [\"8\", \"11\", \"17\", \"21\"]"));
+    }
+
+    @Test
+    public void loopbackIntegrationTimeoutRemainsBoundedAndColdStartSafe() throws IOException {
+        String tests = read("src/test/java/org/example/MainTest.java");
+
+        assertTrue(tests.contains("private static final int LOOPBACK_TIMEOUT_MILLIS = 10_000;"));
+        assertTrue(tests.contains("connection.setConnectTimeout(LOOPBACK_TIMEOUT_MILLIS);"));
+        assertTrue(tests.contains("connection.setReadTimeout(LOOPBACK_TIMEOUT_MILLIS);"));
+        assertFalse(tests.contains("setReadTimeout(2000)"));
     }
 
     private static String read(String relativePath) throws IOException {

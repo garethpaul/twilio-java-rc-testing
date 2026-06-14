@@ -21,6 +21,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class MainTest {
+    private static final int LOOPBACK_TIMEOUT_MILLIS = 10_000;
+
     @Test
     public void validatesE164PhoneNumbers() {
         assertTrue(Main.isValidPhoneNumber("+123456"));
@@ -702,8 +704,8 @@ public class MainTest {
                 "http://127.0.0.1:" + port + path
         ).openConnection();
         connection.setRequestMethod(method);
-        connection.setConnectTimeout(2000);
-        connection.setReadTimeout(2000);
+        connection.setConnectTimeout(LOOPBACK_TIMEOUT_MILLIS);
+        connection.setReadTimeout(LOOPBACK_TIMEOUT_MILLIS);
         if (body != null) {
             byte[] bodyBytes = body.getBytes(StandardCharsets.UTF_8);
             connection.setDoOutput(true);

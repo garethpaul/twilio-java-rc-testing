@@ -97,9 +97,11 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - `make check`
 - `scripts/check-baseline.sh`
 - `mvn test`
-- GitHub Actions runs `make check` on Java 8, 11, 17, and 21 with read-only
-  repository permissions, non-persisted checkout credentials, Ubuntu 24.04,
-  and immutable action pins. The baseline rejects additional workflow files.
+- GitHub Actions runs `make check` for all branch pushes, pull requests, and
+  manual dispatches on Java 8, 11, 17, and 21 with read-only repository
+  permissions, non-persisted checkout credentials, Ubuntu 24.04, and immutable
+  action pins. The baseline rejects branch-filtered pushes and additional
+  workflow files.
 - `mvn -DskipTests package`
 - The baseline script checks required project files, completed docs-plan
   metadata, and local editor metadata hygiene.

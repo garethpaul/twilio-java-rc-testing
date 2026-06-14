@@ -38,6 +38,8 @@ Priority:
 - Keep the injectable Twilio call-sender boundary covered by local tests
 - Keep Java, Maven, and Twilio SDK support claims tied to executable repository
   evidence
+- Keep hosted verification active for pushes to every branch as well as pull
+  requests and manual runs
 - Keep Twilio provider failure diagnostics out of HTTP responses
 - Keep every HTTP response non-cacheable, non-frameable, and constrained by a
   restrictive browser security policy
