@@ -38,9 +38,21 @@ for path in \
   "docs/plans/2026-06-13-live-dial-authorization-order.md" \
   "docs/plans/2026-06-13-live-dial-rate-limit.md" \
   "docs/plans/2026-06-13-strict-dial-form-parsing.md" \
+  "docs/plans/2026-06-14-make-root-override-protection.md" \
   "scripts/check-baseline.sh"; do
   require_file "$path"
 done
+
+make_root='override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))'
+if ! grep -Fxq -- "$make_root" "$MAKEFILE"; then
+  printf '%s\n' "Makefile ROOT must be protected and derived from the loaded Makefile." >&2
+  exit 1
+fi
+
+if ! grep -Fxq -- 'MVN ?= mvn' "$MAKEFILE"; then
+  printf '%s\n' "Makefile must preserve the Maven command override." >&2
+  exit 1
+fi
 
 for rate_limit_contract in \
   'private static final int MAX_LIVE_DIAL_ATTEMPTS = 5;' \

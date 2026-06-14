@@ -82,7 +82,12 @@ public class DocsPlansTest {
                 "make check must run the scripted baseline guard from the repository root",
                 makefile.contains("\"$(ROOT)/scripts/check-baseline.sh\"")
         );
-        assertTrue(makefile.contains("ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))"));
+        assertTrue(
+                "ROOT must resist command-line reassignment",
+                makefile.contains("override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))")
+        );
+        assertFalse("ROOT must not depend on the caller's directory", makefile.contains("ROOT := $(CURDIR)"));
+        assertTrue("the Maven executable must remain configurable", makefile.contains("MVN ?= mvn"));
         assertTrue(makefile.contains("cd \"$(ROOT)\" && $(MVN)"));
     }
 
