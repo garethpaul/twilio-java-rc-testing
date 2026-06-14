@@ -32,6 +32,8 @@ public class DocsPlansTest {
             DOCS_PLANS.resolve("2026-06-13-live-dial-rate-limit.md");
     private static final Path STRICT_DIAL_FORM_PLAN =
             DOCS_PLANS.resolve("2026-06-13-strict-dial-form-parsing.md");
+    private static final Path SUPPORTED_TOOLCHAIN_VERSIONS_PLAN =
+            DOCS_PLANS.resolve("2026-06-14-supported-toolchain-versions.md");
 
     @Test
     public void canonicalPlanIsCompletedAndVerified() throws IOException {
@@ -58,6 +60,10 @@ public class DocsPlansTest {
         assertTrue("HTTP response headers plan must exist", plans.contains(HTTP_RESPONSE_HEADERS_PLAN));
         assertTrue("live dial rate-limit plan must exist", plans.contains(LIVE_DIAL_RATE_LIMIT_PLAN));
         assertTrue("strict dial form plan must exist", plans.contains(STRICT_DIAL_FORM_PLAN));
+        assertTrue(
+                "supported toolchain versions plan must exist",
+                plans.contains(SUPPORTED_TOOLCHAIN_VERSIONS_PLAN)
+        );
 
         for (Path plan : plans) {
             String text = new String(Files.readAllBytes(plan), StandardCharsets.UTF_8);
@@ -140,6 +146,23 @@ public class DocsPlansTest {
                 "(?s).*\\n\\s*[A-Za-z0-9_-]+:\\s*write(?:\\s|$).*"
         ));
         assertFalse("workflow must not use pull_request_target", workflow.contains("pull_request_target:"));
+    }
+
+    @Test
+    public void supportedVersionsMatchExecutableContracts() throws IOException {
+        String readme = read("README.md");
+        String pom = read("pom.xml");
+        String workflow = read(".github/workflows/check.yml");
+
+        assertTrue(readme.contains("Java source and target: 8"));
+        assertTrue(readme.contains("Verified Java runtimes: 8, 11, 17, and 21"));
+        assertTrue(readme.contains("Reproduced local Maven baseline: 3.6.3"));
+        assertTrue(readme.contains("Twilio Java SDK: exactly 12.1.1"));
+        assertTrue(readme.contains("minimum supported Maven release"));
+        assertTrue(pom.contains("<java.version>1.8</java.version>"));
+        assertTrue(pom.contains("<artifactId>twilio</artifactId>"));
+        assertTrue(pom.contains("<version>12.1.1</version>"));
+        assertTrue(workflow.contains("java-version: [\"8\", \"11\", \"17\", \"21\"]"));
     }
 
     private static String read(String relativePath) throws IOException {

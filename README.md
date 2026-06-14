@@ -32,6 +32,22 @@ Additional scan context:
 ### Prerequisites
 
 - Git
+- A JDK from the verified Java 8, 11, 17, or 21 runtime set. The project
+  compiles Java 8 source and target bytecode.
+- Maven. Maven 3.6.3 is the reproduced local baseline. This does not claim a
+  minimum supported Maven release.
+
+### Supported Versions
+
+- Java source and target: 8
+- Verified Java runtimes: 8, 11, 17, and 21
+- Reproduced local Maven baseline: 3.6.3
+- Twilio Java SDK: exactly 12.1.1
+
+`pom.xml` is the source of truth for Java compilation and dependency versions.
+`.github/workflows/check.yml` is the source of truth for the hosted runtime
+matrix. A version not listed above is unverified rather than necessarily
+incompatible.
 
 ### Setup
 
@@ -161,6 +177,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   hosted Java matrix verification.
 - See `docs/plans/2026-06-13-live-dial-authorization-order.md` for the
   authentication-first live request boundary.
+- See `docs/plans/2026-06-14-supported-toolchain-versions.md` for the Java,
+  Maven, and Twilio SDK support boundary.
 
 ## Contributing
 

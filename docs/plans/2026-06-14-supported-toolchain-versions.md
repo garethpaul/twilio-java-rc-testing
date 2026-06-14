@@ -1,6 +1,6 @@
 # Supported Toolchain Versions
 
-## Status: Planned
+## Status: Completed
 
 ## Context
 
@@ -28,11 +28,14 @@ the canonical gate actually verifies.
 
 ## Verification
 
-- focused documentation and baseline contracts
-- repository and external-directory `make check` on Java 8 and Maven 3.6.3
-- hostile Java matrix, compiler target, Maven baseline, SDK pin, documentation,
-  suite, roadmap, and plan-status mutations
-- final artifact, credential, exact-diff, and hosted matrix audits
+- Focused documentation and baseline contracts passed.
+- The repository and external-directory `make check` passed.
+- Both runs used Java 8 and Maven 3.6.3.
+- Eight hostile supported-version mutations were rejected across the Java
+  matrix, compiler target, Maven baseline, SDK pin, documentation, suite,
+  roadmap, and plan-status contracts.
+- Final artifact, credential, exact-diff, and hosted matrix audits remain the
+  shipping gate.
 
 ## Scope Boundary
 

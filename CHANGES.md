@@ -1,5 +1,11 @@
 # Changes
 
+## 2026-06-14
+
+- Documented Java 8 source compatibility, hosted Java 8/11/17/21 verification,
+  Maven 3.6.3 as a reproduced local baseline, and the exact Twilio Java 12.1.1
+  pin without claiming unverified minimum tool versions.
+
 ## 2026-06-13
 
 - Rejected duplicate phone/token fields and malformed percent encoding with a

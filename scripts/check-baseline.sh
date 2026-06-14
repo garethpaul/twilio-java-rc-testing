@@ -39,8 +39,60 @@ for path in \
   "docs/plans/2026-06-13-live-dial-rate-limit.md" \
   "docs/plans/2026-06-13-strict-dial-form-parsing.md" \
   "docs/plans/2026-06-14-make-root-override-protection.md" \
+  "docs/plans/2026-06-14-supported-toolchain-versions.md" \
   "scripts/check-baseline.sh"; do
   require_file "$path"
+done
+
+for supported_version_contract in \
+  'Java source and target: 8' \
+  'Verified Java runtimes: 8, 11, 17, and 21' \
+  'Reproduced local Maven baseline: 3.6.3' \
+  'Twilio Java SDK: exactly 12.1.1' \
+  'minimum supported Maven release' \
+  'docs/plans/2026-06-14-supported-toolchain-versions.md'; do
+  if ! grep -Fq -- "$supported_version_contract" "$README"; then
+    printf '%s\n' "README supported-version contract is missing: $supported_version_contract" >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fq '<java.version>1.8</java.version>' "$ROOT_DIR/pom.xml"; then
+  printf '%s\n' "pom.xml must preserve Java 8 source compatibility." >&2
+  exit 1
+fi
+
+if ! grep -Fq '<version>12.1.1</version>' "$ROOT_DIR/pom.xml"; then
+  printf '%s\n' "pom.xml must preserve the exact Twilio Java 12.1.1 pin." >&2
+  exit 1
+fi
+
+if ! grep -Fq 'java-version: ["8", "11", "17", "21"]' "$WORKFLOW"; then
+  printf '%s\n' "Hosted verification must preserve Java 8, 11, 17, and 21." >&2
+  exit 1
+fi
+
+for support_evidence in \
+  "$ROOT_DIR/CHANGES.md:Maven 3.6.3" \
+  "$ROOT_DIR/VISION.md:Keep Java, Maven, and Twilio SDK support claims" \
+  "$ROOT_DIR/src/test/java/org/example/DocsPlansTest.java:supportedVersionsMatchExecutableContracts"; do
+  support_file=${support_evidence%%:*}
+  support_contract=${support_evidence#*:}
+  if ! grep -Fq -- "$support_contract" "$support_file"; then
+    printf '%s\n' "$support_file is missing supported-version evidence: $support_contract" >&2
+    exit 1
+  fi
+done
+
+SUPPORTED_VERSIONS_PLAN="$DOCS_PLANS/2026-06-14-supported-toolchain-versions.md"
+for plan_contract in \
+  'Status: Completed' \
+  'The repository and external-directory `make check` passed.' \
+  'Eight hostile supported-version mutations were rejected'; do
+  if ! grep -Fq -- "$plan_contract" "$SUPPORTED_VERSIONS_PLAN"; then
+    printf '%s\n' "Supported-version plan is missing verification evidence: $plan_contract" >&2
+    exit 1
+  fi
 done
 
 make_root='override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))'
