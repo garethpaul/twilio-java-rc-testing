@@ -1,13 +1,54 @@
 # Changes
 
+## 2026-06-19
+
+- Moved live-call rate limiting after form parsing, authorization, and provider
+  configuration validation so unauthenticated requests cannot consume quota.
+- Added strict request IDs and a bounded process-local accepted-request ledger
+  to reject duplicate or uncertain-outcome call attempts.
+- Disabled Twilio SDK and Apache HTTP retries for call-creation POSTs, reused one
+  bounded-timeout client, validated Account SID shape, and disabled SDK logging.
+- Tightened exact E.164 and malformed form handling and expanded hostile tests.
+
+## 2026-06-14
+
+- Stabilized cold-start loopback integration tests with one bounded ten-second
+  connection/read timeout and fail-closed shell and JUnit contracts.
+- Expanded the canonical Java verification matrix from `main`-only pushes to
+  all branch pushes, with shell and JUnit guards against branch filters.
+- Documented Java 8 source compatibility, hosted Java 8/11/17/21 verification,
+  Maven 3.6.3 as a reproduced local baseline, and the exact Twilio Java 12.1.1
+  pin without claiming unverified minimum tool versions.
+
+## 2026-06-13
+
+- Rejected duplicate phone/token fields and malformed percent encoding with a
+  generic `400` before dial authorization or provider configuration.
+- Limited live dial requests to five attempts per process each minute before
+  body parsing or token comparison, with `429` and `Retry-After` responses.
+- Added deterministic window, route-ordering, response-header, and dry-run
+  independence coverage for the live-attempt boundary.
+- Authorized live dial requests before returning detailed Twilio credential,
+  sender, or callback-origin configuration errors, while preserving
+  unauthenticated dry runs.
+
+## 2026-06-12
+
+- Required the exact `application/x-www-form-urlencoded` media type on the
+  dial route while accepting case-insensitive parameterized variants, with
+  loopback and fail-closed baseline coverage for spoofed content types.
+
 ## 2026-06-10
 
 - Converted Twilio SDK runtime failures into a generic HTTP 502 response and
   added an injectable provider-boundary regression test.
 - Added centralized no-store, Content Security Policy, permissions, referrer,
   framing, and MIME-sniffing response headers with loopback integration tests.
+- Added loopback regression coverage for the 8 KiB form-body limit and its
+  generic HTTP 413 response.
 - Fixed GitHub Actions to Ubuntu 24.04 with annotated immutable actions and
-  scoped concurrency, and made every Maven target root-independent.
+  scoped concurrency, disabled persisted checkout credentials, rejected extra
+  workflow files, and made every Maven target root-independent.
 - Replaced the Twilio Java 9.0.0 release candidate with stable 12.1.1 after
   verifying unchanged call and TwiML APIs across Java 8, 11, 17, and 21.
 - Removed Spark and Jetty after hosted scanning found advisories affecting the

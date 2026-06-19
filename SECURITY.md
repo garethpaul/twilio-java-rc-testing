@@ -26,6 +26,15 @@ Helpful reports include:
 
 - This repository appears to be a public sample, documentation, or utility project. The active security scope is the code and documentation on the default branch.
 - Review found authentication, token, or session-related code paths; changes in those areas should receive security-focused review before merge.
+- Live dial requests must authorize the per-request dial token before returning
+  detailed Twilio provider configuration errors. Dry-run requests intentionally
+  remain available without that token and do not create outbound calls.
+- Authorized live requests must also provide a server-rendered request ID.
+  Accepted IDs are recorded before provider access so duplicate submissions and
+  uncertain provider outcomes cannot trigger a second in-process attempt.
+- Twilio call creation uses one bounded transport attempt with Apache and SDK
+  retries disabled. A `502` is intentionally treated as an unknown provider
+  outcome; operators must inspect Twilio before choosing a new request ID.
 - Review found external API integrations or credential-adjacent configuration; changes in those areas should receive security-focused review before merge.
 - Review found network clients, sockets, web APIs, or service endpoints; changes in those areas should receive security-focused review before merge.
 - Review found mobile permission or privacy-sensitive data handling; changes in those areas should receive security-focused review before merge.
@@ -37,6 +46,15 @@ Helpful reports include:
 Live `/dial-phone` requests require the separately configured
 `TWILIO_DIAL_TOKEN`. Use a high-entropy value, do not place it in URLs or source
 control, and rotate it if a submitted form or request log may have exposed it.
+
+The sample also permits at most five live dial attempts per process each
+minute, before form parsing or token comparison. This bounds token guessing and
+accidental call volume but is not a distributed control and does not replace
+Twilio account spend limits or deployment-level abuse protection.
+
+The dial form rejects duplicate phone-number or authorization-token fields and
+malformed percent encoding before authorization or provider configuration.
+Unknown fields are ignored, but relevant fields must be unique and decodable.
 
 HTTP responses use `no-store`, framing denial, a no-referrer policy, a
 restrictive Content Security Policy, and disabled camera/geolocation/microphone
