@@ -64,7 +64,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   Configure `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and
   `TWILIO_SEND_LIVE=true` only when intentionally placing live calls. Live
   dialing also requires a strong `TWILIO_DIAL_TOKEN`; enter that value in the
-  form for each authorized live request.
+  form for each authorized live request. `TWILIO_ACCOUNT_SID` must use the
+  canonical `AC` plus 32 hexadecimal characters shape.
 - Maven resolves the stable Twilio Java 12.1.1 SDK. HTTP routes use Java's
   built-in server, so the sample does not depend on vulnerable Spark/Jetty 9.4.
 - Dependency management keeps Twilio's Java-8-compatible Jackson line at
@@ -79,7 +80,11 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   checked-in form marks the phone number field as required before submission.
 - Twilio SDK failures return a generic `502` response without exposing provider
   diagnostics, credentials, or request metadata.
-- Duplicate `number` or `dialToken` fields and malformed percent encoding are
+- Each rendered form carries a fresh request ID. The server atomically rejects
+  a repeated live request ID before provider access, retains accepted IDs in a
+  bounded process-local ledger, and does not retry Twilio call-creation POSTs.
+  Connect and response timeouts are five and ten seconds respectively.
+- Duplicate `number`, `dialToken`, or `requestId` fields, malformed pairs, and malformed percent encoding are
   rejected with a generic `400` before authorization or provider setup; unknown
   form fields remain ignored for browser compatibility.
 - `NGROK_URL` must be a valid HTTPS origin URL with a host, without path,

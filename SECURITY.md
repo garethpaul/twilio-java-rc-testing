@@ -29,6 +29,12 @@ Helpful reports include:
 - Live dial requests must authorize the per-request dial token before returning
   detailed Twilio provider configuration errors. Dry-run requests intentionally
   remain available without that token and do not create outbound calls.
+- Authorized live requests must also provide a server-rendered request ID.
+  Accepted IDs are recorded before provider access so duplicate submissions and
+  uncertain provider outcomes cannot trigger a second in-process attempt.
+- Twilio call creation uses one bounded transport attempt with Apache and SDK
+  retries disabled. A `502` is intentionally treated as an unknown provider
+  outcome; operators must inspect Twilio before choosing a new request ID.
 - Review found external API integrations or credential-adjacent configuration; changes in those areas should receive security-focused review before merge.
 - Review found network clients, sockets, web APIs, or service endpoints; changes in those areas should receive security-focused review before merge.
 - Review found mobile permission or privacy-sensitive data handling; changes in those areas should receive security-focused review before merge.

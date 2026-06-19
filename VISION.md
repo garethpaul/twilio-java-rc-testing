@@ -36,6 +36,8 @@ Priority:
   authorization and provider configuration
 - Keep loopback integration coverage around request limits and malformed forms
 - Keep the injectable Twilio call-sender boundary covered by local tests
+- Keep live-call authorization, rate limiting, request-ID deduplication, and
+  single-attempt transport behavior at one explicit ownership boundary
 - Keep Java, Maven, and Twilio SDK support claims tied to executable repository
   evidence
 - Keep hosted verification active for pushes to every branch as well as pull

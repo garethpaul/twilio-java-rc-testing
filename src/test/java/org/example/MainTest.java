@@ -1,6 +1,10 @@
 package org.example;
 
 import com.sun.net.httpserver.HttpServer;
+import com.twilio.http.HttpClient;
+import com.twilio.http.HttpMethod;
+import com.twilio.http.Request;
+import com.twilio.http.Response;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -31,6 +35,8 @@ public class MainTest {
         assertFalse(Main.isValidPhoneNumber("   "));
         assertFalse(Main.isValidPhoneNumber("123456"));
         assertFalse(Main.isValidPhoneNumber("+12abc"));
+        assertFalse(Main.isValidPhoneNumber(" +123456"));
+        assertFalse(Main.isValidPhoneNumber("+123456 "));
     }
 
     @Test
@@ -76,10 +82,24 @@ public class MainTest {
     }
 
     @Test
+    public void liveConfigurationRejectsMalformedTwilioAccountSids() {
+        assertEquals(
+                "TWILIO_ACCOUNT_SID must be a valid Twilio Account SID",
+                Main.callConfigurationError(
+                        "not-an-account-sid",
+                        "token",
+                        "+123456",
+                        "https://example.ngrok.io",
+                        true
+                )
+        );
+    }
+
+    @Test
     public void rejectsInvalidConfiguredTwilioNumber() {
         assertEquals(
                 "TWILIO_PHONE_NUMBER must be a valid E.164 phone number",
-                Main.callConfigurationError("sid", "token", "not-a-number", "https://example.ngrok.io")
+                Main.callConfigurationError("AC00000000000000000000000000000000", "token", "not-a-number", "https://example.ngrok.io")
         );
     }
 
@@ -87,7 +107,7 @@ public class MainTest {
     public void rejectsInsecureCallbackBaseUrl() {
         assertEquals(
                 "NGROK_URL must be a valid https origin URL",
-                Main.callConfigurationError("sid", "token", "+123456", "http://example.ngrok.io")
+                Main.callConfigurationError("AC00000000000000000000000000000000", "token", "+123456", "http://example.ngrok.io")
         );
     }
 
@@ -95,11 +115,11 @@ public class MainTest {
     public void rejectsMalformedCallbackBaseUrl() {
         assertEquals(
                 "NGROK_URL must be a valid https origin URL",
-                Main.callConfigurationError("sid", "token", "+123456", "https://")
+                Main.callConfigurationError("AC00000000000000000000000000000000", "token", "+123456", "https://")
         );
         assertEquals(
                 "NGROK_URL must be a valid https origin URL",
-                Main.callConfigurationError("sid", "token", "+123456", "not a url")
+                Main.callConfigurationError("AC00000000000000000000000000000000", "token", "+123456", "not a url")
         );
     }
 
@@ -113,7 +133,7 @@ public class MainTest {
 
     @Test
     public void acceptsCompleteCallConfiguration() {
-        assertNull(Main.callConfigurationError("sid", "token", "+123456", "https://example.ngrok.io"));
+        assertNull(Main.callConfigurationError("AC00000000000000000000000000000000", "token", "+123456", "https://example.ngrok.io"));
     }
 
     @Test
@@ -273,8 +293,12 @@ public class MainTest {
             String[] invalidBodies = {
                     "number=%2B15557654321&number=%2B15550000000&dialToken=dial-secret",
                     "number=%2B15557654321&dialToken=dial-secret&dialToken=wrong",
+                    "number=%2B15557654321&dialToken=dial-secret"
+                            + "&requestId=11111111-1111-4111-8111-111111111111"
+                            + "&requestId=22222222-2222-4222-8222-222222222222",
                     "num%ZZber=%2B15557654321&dialToken=dial-secret",
-                    "number=%ZZ&dialToken=dial-secret"
+                    "number=%ZZ&dialToken=dial-secret",
+                    "number=%2B15557654321&submit&dialToken=dial-secret"
             };
             for (String body : invalidBodies) {
                 HttpResponse response = request(port, "POST", "/dial-phone", body);
@@ -332,6 +356,10 @@ public class MainTest {
             assertTrue(response.contentType.startsWith("text/html"));
             assertTrue(response.body.contains("Twilio Java voice testing"));
             assertTrue(response.body.contains("method=\"post\" action=\"/dial-phone\""));
+            assertFalse(response.body.contains("__LIVE_DIAL_REQUEST_ID__"));
+            assertTrue(response.body.matches(
+                    "(?s).*name=\"requestId\" value=\"[0-9a-f-]{36}\".*"
+            ));
             assertEquals("no-store", response.cacheControl);
             assertEquals("DENY", response.frameOptions);
             assertEquals("no-referrer", response.referrerPolicy);
@@ -369,6 +397,9 @@ public class MainTest {
         ));
         assertTrue(html.contains(
                 "id=\"dialToken\" name=\"dialToken\" placeholder=\"Live dial token\""
+        ));
+        assertTrue(html.contains(
+                "name=\"requestId\" value=\"__LIVE_DIAL_REQUEST_ID__\""
         ));
     }
 
@@ -483,37 +514,103 @@ public class MainTest {
     }
 
     @Test
-    public void liveDialRouteRateLimitsBeforeReadingAnotherFormBody() throws Exception {
+    public void liveDialRouteRateLimitsOnlyAfterParsingAndAuthorization() throws Exception {
+        String originalNumber = Main.twilioNumber;
+        String originalBaseUrl = Main.NGROK_BASE_URL;
         String originalSendLive = Main.TWILIO_SEND_LIVE;
         String originalDialToken = Main.TWILIO_DIAL_TOKEN;
+        String originalAccountSid = Main.accountSid;
+        String originalAuthToken = Main.authToken;
         Main.resetLiveDialRateLimit();
         Main.currentTimeMillis = () -> 1_000L;
         HttpServer server = Main.startServer(0);
         try {
+            Main.twilioNumber = "+15551234567";
+            Main.NGROK_BASE_URL = "https://example.ngrok.io";
             Main.TWILIO_SEND_LIVE = "true";
             Main.TWILIO_DIAL_TOKEN = "dial-secret";
+            Main.accountSid = "AC00000000000000000000000000000000";
+            Main.authToken = "00000000000000000000000000000000";
             int port = server.getAddress().getPort();
             for (int attempt = 0; attempt < 5; attempt++) {
-                String token = attempt == 0 ? "dial-secret" : "wrong";
-                HttpResponse response = request(
-                        port,
-                        "POST",
-                        "/dial-phone",
-                        "number=%2B15557654321&dialToken=" + token
+                Main.HttpResult response = Main.dialPhone(
+                        "+15557654321",
+                        "dial-secret",
+                        String.format("00000000-0000-0000-0000-%012d", attempt),
+                        (to, from, callbackUri) -> { }
                 );
-                assertEquals(attempt == 0 ? 503 : 403, response.status);
+                assertEquals(200, response.status);
             }
 
-            String oversizedBody = "number=%2B15557654321&dialToken=" + repeat("x", 9 * 1024);
-            HttpResponse limited = request(port, "POST", "/dial-phone", oversizedBody);
+            HttpResponse limited = request(
+                    port,
+                    "POST",
+                    "/dial-phone",
+                    "number=%2B15557654321&dialToken=dial-secret"
+                            + "&requestId=00000000-0000-0000-0000-000000000005"
+            );
 
             assertEquals(429, limited.status);
             assertEquals("60", limited.retryAfter);
             assertEquals("Too many live dial attempts.", limited.body);
         } finally {
             server.stop(0);
+            Main.twilioNumber = originalNumber;
+            Main.NGROK_BASE_URL = originalBaseUrl;
             Main.TWILIO_SEND_LIVE = originalSendLive;
             Main.TWILIO_DIAL_TOKEN = originalDialToken;
+            Main.accountSid = originalAccountSid;
+            Main.authToken = originalAuthToken;
+            Main.resetLiveDialRateLimit();
+        }
+    }
+
+    @Test
+    public void unauthorizedLiveDialRequestsDoNotConsumeTheAuthorizedRateLimit() throws Exception {
+        String originalNumber = Main.twilioNumber;
+        String originalBaseUrl = Main.NGROK_BASE_URL;
+        String originalSendLive = Main.TWILIO_SEND_LIVE;
+        String originalDialToken = Main.TWILIO_DIAL_TOKEN;
+        String originalAccountSid = Main.accountSid;
+        String originalAuthToken = Main.authToken;
+        Main.resetLiveDialRateLimit();
+        HttpServer server = Main.startServer(0);
+        try {
+            Main.twilioNumber = "+15551234567";
+            Main.NGROK_BASE_URL = "https://example.ngrok.io";
+            Main.TWILIO_SEND_LIVE = "true";
+            Main.TWILIO_DIAL_TOKEN = "dial-secret";
+            Main.accountSid = null;
+            Main.authToken = null;
+            int port = server.getAddress().getPort();
+
+            for (int attempt = 0; attempt < 6; attempt++) {
+                HttpResponse unauthorized = request(
+                        port,
+                        "POST",
+                        "/dial-phone",
+                        "number=%2B15557654321&dialToken=wrong"
+                );
+                assertEquals(403, unauthorized.status);
+            }
+
+            HttpResponse authorized = request(
+                    port,
+                    "POST",
+                    "/dial-phone",
+                    "number=%2B15557654321&dialToken=dial-secret"
+            );
+
+            assertEquals(503, authorized.status);
+            assertTrue(authorized.body.contains("TWILIO_ACCOUNT_SID"));
+        } finally {
+            server.stop(0);
+            Main.twilioNumber = originalNumber;
+            Main.NGROK_BASE_URL = originalBaseUrl;
+            Main.TWILIO_SEND_LIVE = originalSendLive;
+            Main.TWILIO_DIAL_TOKEN = originalDialToken;
+            Main.accountSid = originalAccountSid;
+            Main.authToken = originalAuthToken;
             Main.resetLiveDialRateLimit();
         }
     }
@@ -523,6 +620,9 @@ public class MainTest {
         String originalNumber = Main.twilioNumber;
         String originalBaseUrl = Main.NGROK_BASE_URL;
         String originalSendLive = Main.TWILIO_SEND_LIVE;
+        String originalDialToken = Main.TWILIO_DIAL_TOKEN;
+        String originalAccountSid = Main.accountSid;
+        String originalAuthToken = Main.authToken;
         Main.resetLiveDialRateLimit();
         Main.currentTimeMillis = () -> 1_000L;
         HttpServer server = Main.startServer(0);
@@ -530,14 +630,24 @@ public class MainTest {
             Main.twilioNumber = "+15551234567";
             Main.NGROK_BASE_URL = "https://example.ngrok.io";
             Main.TWILIO_SEND_LIVE = "true";
-            int port = server.getAddress().getPort();
+            Main.TWILIO_DIAL_TOKEN = "dial-secret";
+            Main.accountSid = "AC00000000000000000000000000000000";
+            Main.authToken = "00000000000000000000000000000000";
             for (int attempt = 0; attempt < 5; attempt++) {
-                request(port, "POST", "/dial-phone", "number=%2B15557654321");
+                assertEquals(
+                        200,
+                        Main.dialPhone(
+                                "+15557654321",
+                                "dial-secret",
+                                String.format("10000000-0000-0000-0000-%012d", attempt),
+                                (to, from, callbackUri) -> { }
+                        ).status
+                );
             }
 
             Main.TWILIO_SEND_LIVE = "false";
             HttpResponse dryRun = request(
-                    port,
+                    server.getAddress().getPort(),
                     "POST",
                     "/dial-phone",
                     "number=%2B15557654321"
@@ -550,6 +660,9 @@ public class MainTest {
             Main.twilioNumber = originalNumber;
             Main.NGROK_BASE_URL = originalBaseUrl;
             Main.TWILIO_SEND_LIVE = originalSendLive;
+            Main.TWILIO_DIAL_TOKEN = originalDialToken;
+            Main.accountSid = originalAccountSid;
+            Main.authToken = originalAuthToken;
             Main.resetLiveDialRateLimit();
         }
     }
@@ -566,7 +679,7 @@ public class MainTest {
             Main.twilioNumber = "+15551234567";
             Main.NGROK_BASE_URL = "https://example.ngrok.io";
             Main.TWILIO_SEND_LIVE = "true";
-            Main.accountSid = "sid";
+            Main.accountSid = "AC00000000000000000000000000000000";
             Main.authToken = "token";
 
             Main.TWILIO_DIAL_TOKEN = null;
@@ -597,11 +710,12 @@ public class MainTest {
             Main.NGROK_BASE_URL = "https://example.ngrok.io";
             Main.TWILIO_SEND_LIVE = "true";
             Main.TWILIO_DIAL_TOKEN = "dial-secret";
-            Main.accountSid = "sid";
+            Main.accountSid = "AC00000000000000000000000000000000";
             Main.authToken = "token";
             Main.HttpResult result = Main.dialPhone(
                     "+15557654321",
                     "dial-secret",
+                    "22222222-2222-4222-8222-222222222222",
                     (to, from, callbackUri) -> {
                         throw new RuntimeException("provider response included auth-token-secret");
                     }
@@ -618,6 +732,133 @@ public class MainTest {
             Main.accountSid = originalAccountSid;
             Main.authToken = originalAuthToken;
         }
+    }
+
+    @Test
+    public void liveDialRequestIdPreventsASecondProviderAttemptAfterAnUnknownOutcome() {
+        String originalNumber = Main.twilioNumber;
+        String originalBaseUrl = Main.NGROK_BASE_URL;
+        String originalSendLive = Main.TWILIO_SEND_LIVE;
+        String originalDialToken = Main.TWILIO_DIAL_TOKEN;
+        String originalAccountSid = Main.accountSid;
+        String originalAuthToken = Main.authToken;
+        int[] senderCalls = {0};
+        Main.resetLiveDialRateLimit();
+        try {
+            Main.twilioNumber = "+15551234567";
+            Main.NGROK_BASE_URL = "https://example.ngrok.io";
+            Main.TWILIO_SEND_LIVE = "true";
+            Main.TWILIO_DIAL_TOKEN = "dial-secret";
+            Main.accountSid = "AC00000000000000000000000000000000";
+            Main.authToken = "00000000000000000000000000000000";
+
+            Main.HttpResult first = Main.dialPhone(
+                    "+15557654321",
+                    "dial-secret",
+                    "11111111-1111-4111-8111-111111111111",
+                    (to, from, callbackUri) -> {
+                        senderCalls[0]++;
+                        throw new RuntimeException("provider response was lost");
+                    }
+            );
+            Main.HttpResult duplicate = Main.dialPhone(
+                    "+15557654321",
+                    "dial-secret",
+                    "11111111-1111-4111-8111-111111111111",
+                    (to, from, callbackUri) -> senderCalls[0]++
+            );
+
+            assertEquals(502, first.status);
+            assertEquals(409, duplicate.status);
+            assertEquals("Duplicate live dial request.", duplicate.body);
+            assertEquals(1, senderCalls[0]);
+        } finally {
+            Main.twilioNumber = originalNumber;
+            Main.NGROK_BASE_URL = originalBaseUrl;
+            Main.TWILIO_SEND_LIVE = originalSendLive;
+            Main.TWILIO_DIAL_TOKEN = originalDialToken;
+            Main.accountSid = originalAccountSid;
+            Main.authToken = originalAuthToken;
+            Main.resetLiveDialRateLimit();
+        }
+    }
+
+    @Test
+    public void liveDialRequiresAnExplicitRequestIdBeforeCallingTheProvider() {
+        String originalNumber = Main.twilioNumber;
+        String originalBaseUrl = Main.NGROK_BASE_URL;
+        String originalSendLive = Main.TWILIO_SEND_LIVE;
+        String originalDialToken = Main.TWILIO_DIAL_TOKEN;
+        String originalAccountSid = Main.accountSid;
+        String originalAuthToken = Main.authToken;
+        int[] senderCalls = {0};
+        Main.resetLiveDialRateLimit();
+        try {
+            Main.twilioNumber = "+15551234567";
+            Main.NGROK_BASE_URL = "https://example.ngrok.io";
+            Main.TWILIO_SEND_LIVE = "true";
+            Main.TWILIO_DIAL_TOKEN = "dial-secret";
+            Main.accountSid = "AC00000000000000000000000000000000";
+            Main.authToken = "00000000000000000000000000000000";
+
+            Main.HttpResult result = Main.dialPhone(
+                    "+15557654321",
+                    "dial-secret",
+                    (to, from, callbackUri) -> senderCalls[0]++
+            );
+
+            assertEquals(400, result.status);
+            assertEquals("Missing or invalid live dial request ID.", result.body);
+            assertEquals(0, senderCalls[0]);
+        } finally {
+            Main.twilioNumber = originalNumber;
+            Main.NGROK_BASE_URL = originalBaseUrl;
+            Main.TWILIO_SEND_LIVE = originalSendLive;
+            Main.TWILIO_DIAL_TOKEN = originalDialToken;
+            Main.accountSid = originalAccountSid;
+            Main.authToken = originalAuthToken;
+            Main.resetLiveDialRateLimit();
+        }
+    }
+
+    @Test
+    public void twilioTransportMakesOnlyOneAttemptForAProviderFailure() {
+        int[] networkAttempts = {0};
+        HttpClient delegate = new HttpClient() {
+            @Override
+            public Response makeRequest(Request request) {
+                networkAttempts[0]++;
+                return new Response("{}", 503);
+            }
+        };
+        Main.SingleAttemptHttpClient client = new Main.SingleAttemptHttpClient(delegate);
+
+        Response response = client.reliableRequest(
+                new Request(HttpMethod.POST, "https://api.twilio.com/test")
+        );
+
+        assertEquals(503, response.getStatusCode());
+        assertEquals(1, networkAttempts[0]);
+    }
+
+    @Test
+    public void twilioClientUsesTheSingleAttemptTransport() {
+        assertTrue(
+                Main.buildTwilioRestClient(
+                        "AC00000000000000000000000000000000",
+                        "00000000000000000000000000000000"
+                ).getHttpClient() instanceof Main.SingleAttemptHttpClient
+        );
+    }
+
+    @Test
+    public void twilioClientDisablesApacheAutomaticRetries() throws Exception {
+        String source = new String(
+                Files.readAllBytes(Paths.get("src/main/java/org/example/Main.java")),
+                StandardCharsets.UTF_8
+        );
+
+        assertTrue(source.contains(".disableAutomaticRetries()"));
     }
 
     @Test
@@ -680,6 +921,7 @@ public class MainTest {
         assertFalse(pom.contains("<artifactId>spark-streaming_2.10</artifactId>"));
         assertFalse(pom.contains("<artifactId>velocity</artifactId>"));
         assertFalse(pom.contains("webjars-"));
+        assertTrue(pom.contains("<artifactId>slf4j-nop</artifactId>"));
     }
 
     private static HttpResponse request(int port, String method, String path, String body)

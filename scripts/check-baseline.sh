@@ -42,6 +42,7 @@ for path in \
   "docs/plans/2026-06-14-loopback-read-timeout.md" \
   "docs/plans/2026-06-14-make-root-override-protection.md" \
   "docs/plans/2026-06-14-supported-toolchain-versions.md" \
+  "docs/plans/2026-06-19-live-dial-at-most-once.md" \
   "scripts/check-baseline.sh"; do
   require_file "$path"
 done
@@ -121,11 +122,12 @@ fi
 for rate_limit_contract in \
   'private static final int MAX_LIVE_DIAL_ATTEMPTS = 5;' \
   'private static final long LIVE_DIAL_WINDOW_MILLIS = 60_000L;' \
-  '!LIVE_DIAL_RATE_LIMITER.tryAcquire(currentTimeMillis.getAsLong())' \
+  'LIVE_DIAL_GATE.tryAcquire(requestId, currentTimeMillis.getAsLong())' \
   'exchange.getResponseHeaders().set("Retry-After", "60")' \
-  'sendResponse(exchange, 429, "text/plain; charset=utf-8", "Too many live dial attempts.")' \
+  'new HttpResult(429, "Too many live dial attempts.")' \
   'liveDialRateLimiterAllowsFiveAttemptsAndResetsAfterOneMinute' \
-  'liveDialRouteRateLimitsBeforeReadingAnotherFormBody' \
+  'liveDialRouteRateLimitsOnlyAfterParsingAndAuthorization' \
+  'unauthorizedLiveDialRequestsDoNotConsumeTheAuthorizedRateLimit' \
   'dryRunRouteIgnoresExhaustedLiveDialRateLimit'; do
   if ! grep -Fq -- "$rate_limit_contract" "$ROOT_DIR/src/main/java/org/example/Main.java" && \
      ! grep -Fq -- "$rate_limit_contract" "$ROOT_DIR/src/test/java/org/example/MainTest.java"; then
@@ -141,16 +143,14 @@ import sys
 source = Path(sys.argv[1]).read_text(encoding="utf-8")
 markers = (
     'if (!isFormContentType(contentType))',
-    '&& !LIVE_DIAL_RATE_LIMITER.tryAcquire(currentTimeMillis.getAsLong()))',
     'byte[] requestBody = readRequestBody(exchange);',
     'dialForm = parseDialForm(requestBody);',
-    'HttpResult result = dialPhone(dialForm.phoneNumber, dialForm.dialToken);',
+    'HttpResult result = dialPhone(',
 )
 positions = tuple(source.index(marker) for marker in markers)
 if positions != tuple(sorted(positions)):
     raise SystemExit(
-        "Live dial rate limiting must follow media-type validation and precede "
-        "request-body parsing and token extraction."
+        "Live dial request parsing must follow media-type validation."
     )
 PY
 
@@ -158,11 +158,12 @@ for strict_form_contract in \
   'private static DialForm parseDialForm(byte[] body) throws InvalidFormException' \
   'String name = decodeFormComponent(parts[0]);' \
   'if (name == null)' \
-  'if (!"number".equals(name) && !"dialToken".equals(name))' \
+  'if (!"number".equals(name) && !"dialToken".equals(name) && !"requestId".equals(name))' \
   'String value = decodeFormComponent(parts[1]);' \
   'if (value == null)' \
   'if (phoneNumber != null)' \
   'if (dialToken != null)' \
+  'if (requestId != null)' \
   'throw new InvalidFormException();' \
   'sendResponse(exchange, 400, "text/plain; charset=utf-8", "Invalid form submission.")' \
   'dialPhoneRouteRejectsAmbiguousOrMalformedRelevantFormFields' \
@@ -195,7 +196,8 @@ if parser is None:
     raise SystemExit("Strict dial form parser body must remain explicit.")
 body = parser.group("body")
 unknown = re.search(
-    r'if \(!"number"\.equals\(name\) && !"dialToken"\.equals\(name\)\) \{\s*continue;\s*\}',
+    r'if \(!"number"\.equals\(name\) && !"dialToken"\.equals\(name\) '
+    r'&& !"requestId"\.equals\(name\)\) \{\s*continue;\s*\}',
     body,
 )
 if unknown is None:
@@ -224,6 +226,23 @@ if [ -z "$authorization_line" ] || [ -z "$configuration_line" ] || \
   printf '%s\n' "Live dial authorization must precede provider configuration validation." >&2
   exit 1
 fi
+
+for at_most_once_contract in \
+  'name="requestId" value="__LIVE_DIAL_REQUEST_ID__"' \
+  'new HttpResult(409, "Duplicate live dial request.")' \
+  'liveDialRequestIdPreventsASecondProviderAttemptAfterAnUnknownOutcome' \
+  'liveDialRequiresAnExplicitRequestIdBeforeCallingTheProvider' \
+  'class SingleAttemptHttpClient extends HttpClient' \
+  '.disableAutomaticRetries()' \
+  'twilioTransportMakesOnlyOneAttemptForAProviderFailure' \
+  'twilioClientDisablesApacheAutomaticRetries'; do
+  if ! grep -Fq -- "$at_most_once_contract" "$ROOT_DIR/src/main/java/org/example/Main.java" && \
+     ! grep -Fq -- "$at_most_once_contract" "$ROOT_DIR/src/main/resources/public/index.html" && \
+     ! grep -Fq -- "$at_most_once_contract" "$ROOT_DIR/src/test/java/org/example/MainTest.java"; then
+    printf '%s\n' "Live dial at-most-once contract is missing: $at_most_once_contract" >&2
+    exit 1
+  fi
+done
 
 workflow_files=$(find "$ROOT_DIR/.github/workflows" -maxdepth 1 -type f -print | sort)
 if [ "$workflow_files" != "$WORKFLOW" ]; then
@@ -267,8 +286,8 @@ for event_contract in \
 done
 
 for provider_failure_contract in \
-  "return dialPhone(phoneNumber, dialToken, Main::createTwilioCall)" \
-  "static HttpResult dialPhone(String phoneNumber, String dialToken, CallSender callSender)" \
+  "String requestId," \
+  "CallSender callSender" \
   "catch (RuntimeException providerError)" \
   'new HttpResult(502, "Twilio call request failed.")' \
   "liveDialHidesTwilioProviderFailureDetails"; do

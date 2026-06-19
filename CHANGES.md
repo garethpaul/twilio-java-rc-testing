@@ -1,5 +1,15 @@
 # Changes
 
+## 2026-06-19
+
+- Moved live-call rate limiting after form parsing, authorization, and provider
+  configuration validation so unauthenticated requests cannot consume quota.
+- Added strict request IDs and a bounded process-local accepted-request ledger
+  to reject duplicate or uncertain-outcome call attempts.
+- Disabled Twilio SDK and Apache HTTP retries for call-creation POSTs, reused one
+  bounded-timeout client, validated Account SID shape, and disabled SDK logging.
+- Tightened exact E.164 and malformed form handling and expanded hostile tests.
+
 ## 2026-06-14
 
 - Stabilized cold-start loopback integration tests with one bounded ten-second
