@@ -70,6 +70,7 @@ verify: lint test build
 
 root-test:
 	/bin/sh "$$ROOT/scripts/test-makefile-authority.sh"
+	/bin/sh "$$ROOT/scripts/test-workflow-authority.sh"
 
 check: root-test verify
 	"$$ROOT/scripts/check-baseline.sh"

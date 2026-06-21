@@ -115,8 +115,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - GitHub Actions runs `scripts/run-make.sh check` for all branch pushes, pull
   requests, and manual dispatches on Java 8, 11, 17, and 21 with read-only repository
   permissions, non-persisted checkout credentials, Ubuntu 24.04, and immutable
-  action pins. The baseline rejects branch-filtered pushes and additional
-  workflow files.
+  action pins. The baseline requires the complete workflow bytes to match the
+  reviewed canonical SHA-256 and rejects additional workflow files.
 - `mvn -DskipTests package`
 - The baseline script checks required project files, completed docs-plan
   metadata, and local editor metadata hygiene.

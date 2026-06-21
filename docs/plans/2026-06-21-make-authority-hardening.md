@@ -27,12 +27,20 @@ could also hide dry-run or ignore-errors state with pre-parse `--eval`.
   executable `MAKEFILES`, and earlier and later `-f` files before proving the
   wrapper excludes those paths.
 - Added executable adversarial regression coverage to `make check`.
+- Replaced permissive hosted-workflow YAML scanning with a closed-world SHA-256
+  contract over the complete reviewed workflow bytes.
+- Added mutations for Unicode-escaped, anchored, tagged, and aliased keys,
+  extra pinned and local actions, a custom shell, an extra step, and an
+  otherwise harmless byte change; every mutation must fail closed.
 - Preserved direct Make compatibility while documenting it as caller authority.
 
 ## Verification
 
 - Repository and external-directory wrapper checks passed without changing the
   Maven, Java, or `PATH` caller boundary.
+- The canonical 844-byte workflow independently hashed to
+  `2e38858f6c84fdcc9f67e5eb05081aacf4ff8e72486e5ec4b338a6eddb273571`
+  with `sha256sum`, `shasum -a 256`, and `openssl dgst -sha256`.
 - No Twilio credentials, provider endpoints, recipients, or live calls were used.
 
 ## Scope Boundaries

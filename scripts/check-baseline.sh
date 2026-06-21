@@ -46,6 +46,7 @@ for path in \
   "docs/plans/2026-06-21-make-authority-hardening.md" \
   "scripts/run-make.sh" \
   "scripts/test-makefile-authority.sh" \
+  "scripts/test-workflow-authority.sh" \
   "scripts/check-baseline.sh"; do
   require_file "$path"
 done
@@ -283,30 +284,28 @@ if [ "$workflow_files" != "$WORKFLOW" ]; then
   exit 1
 fi
 
-for workflow_contract in \
-  "permissions:" \
-  "contents: read" \
-  "persist-credentials: false" \
-  "run: ./scripts/run-make.sh check"; do
-  if ! grep -Fq -- "$workflow_contract" "$WORKFLOW"; then
-    printf '%s\n' "Hosted verification is missing security contract: $workflow_contract" >&2
-    exit 1
-  fi
-done
-
-if [ "$(grep -Fc 'run: ./scripts/run-make.sh check' "$WORKFLOW")" -ne 1 ]; then
-  printf '%s\n' "Hosted verification must use exactly one sanitized Make invocation." >&2
+EXPECTED_WORKFLOW_SHA256=2e38858f6c84fdcc9f67e5eb05081aacf4ff8e72486e5ec4b338a6eddb273571
+if command -v sha256sum >/dev/null 2>&1; then
+  workflow_sha256=$(sha256sum "$WORKFLOW" | awk '{print $1}')
+elif command -v shasum >/dev/null 2>&1; then
+  workflow_sha256=$(shasum -a 256 "$WORKFLOW" | awk '{print $1}')
+else
+  printf '%s\n' "SHA-256 tool is required to verify the hosted workflow." >&2
   exit 1
 fi
-
-if grep -Eq 'run:[[:space:]]+(make|gmake)[[:space:]]' "$WORKFLOW"; then
-  printf '%s\n' "Hosted verification must not invoke Make directly." >&2
+if [ "$workflow_sha256" != "$EXPECTED_WORKFLOW_SHA256" ]; then
+  printf '%s\n' "Hosted workflow bytes do not match the reviewed canonical contract." >&2
   exit 1
 fi
 
 MAKE_WRAPPER="$ROOT_DIR/scripts/run-make.sh"
 if [ ! -x "$MAKE_WRAPPER" ]; then
   printf '%s\n' "scripts/run-make.sh must be executable." >&2
+  exit 1
+fi
+
+if [ ! -x "$ROOT_DIR/scripts/test-workflow-authority.sh" ]; then
+  printf '%s\n' "scripts/test-workflow-authority.sh must be executable." >&2
   exit 1
 fi
 
@@ -324,31 +323,6 @@ for wrapper_contract in \
   '/usr/bin/make --no-print-directory -f "$ROOT/Makefile" "$target"'; do
   if ! grep -Fq -- "$wrapper_contract" "$MAKE_WRAPPER"; then
     printf '%s\n' "Make wrapper is missing required contract: $wrapper_contract" >&2
-    exit 1
-  fi
-done
-
-if grep -Eq '^[[:space:]]*[[:alnum:]_-]+:[[:space:]]*write([[:space:]]|$)' "$WORKFLOW"; then
-  printf '%s\n' "Hosted verification must not grant write permissions." >&2
-  exit 1
-fi
-
-if grep -Fq "pull_request_target:" "$WORKFLOW"; then
-  printf '%s\n' "Hosted verification must not run untrusted changes with pull_request_target." >&2
-  exit 1
-fi
-
-if grep -Fq "branches:" "$WORKFLOW"; then
-  printf '%s\n' "Hosted push verification must cover all branches." >&2
-  exit 1
-fi
-
-for event_contract in \
-  "  pull_request:" \
-  "  push:" \
-  "  workflow_dispatch:"; do
-  if ! grep -Fxq -- "$event_contract" "$WORKFLOW"; then
-    printf '%s\n' "Hosted verification is missing canonical event: $event_contract" >&2
     exit 1
   fi
 done
@@ -389,6 +363,7 @@ for make_contract in \
   'ROOT := $(REPOSITORY_ROOT)' \
   'cd "$$ROOT" && $$MVN' \
   '/bin/sh "$$ROOT/scripts/test-makefile-authority.sh"' \
+  '/bin/sh "$$ROOT/scripts/test-workflow-authority.sh"' \
   'check: root-test verify'; do
   if ! grep -Fq -- "$make_contract" "$MAKEFILE"; then
     printf '%s\n' "Makefile is missing root-independent contract: $make_contract" >&2
