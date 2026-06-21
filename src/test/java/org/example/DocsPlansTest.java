@@ -150,12 +150,7 @@ public class DocsPlansTest {
         assertTrue(workflow.contains("workflow_dispatch:"));
         assertTrue(workflow.contains("actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3"));
         assertTrue(workflow.contains("actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.1.0"));
-        List<String> runCommands = new ArrayList<>();
-        for (String line : workflow.split("\\r?\\n")) {
-            if (line.trim().startsWith("run:")) {
-                runCommands.add(line.trim());
-            }
-        }
+        List<String> runCommands = workflowRunCommands(workflow);
         assertEquals(
                 "workflow must use only the sanitized repository verification command",
                 Collections.singletonList("run: ./scripts/run-make.sh check"),
@@ -167,6 +162,27 @@ public class DocsPlansTest {
                 "(?s).*\\n\\s*[A-Za-z0-9_-]+:\\s*write(?:\\s|$).*"
         ));
         assertFalse("workflow must not use pull_request_target", workflow.contains("pull_request_target:"));
+    }
+
+    @Test
+    public void hostedCommandScannerRecognizesYamlEquivalentRunKeys() {
+        String[][] mutations = {
+                {"steps:\n  - \"run\": echo double-quoted-key\n", "run: echo double-quoted-key"},
+                {"steps:\n  - run : echo spaced-colon\n", "run: echo spaced-colon"},
+                {"steps:\n  - 'run': echo single-quoted-key\n", "run: echo single-quoted-key"},
+                {"steps:\n  - run: echo sequence-mapping\n", "run: echo sequence-mapping"},
+                {"steps:\n  - {name: Extra, run: echo flow-mapping}\n", "run: echo flow-mapping"},
+                {"steps:\n  - {name: Extra, 'run' : 'echo quoted-flow'}\n", "run: echo quoted-flow"},
+                {"steps:\n  - ? run\n    : echo explicit-key\n", "run: echo explicit-key"}
+        };
+
+        for (String[] mutation : mutations) {
+            assertEquals(
+                    mutation[0],
+                    Collections.singletonList(mutation[1]),
+                    workflowRunCommands(mutation[0])
+            );
+        }
     }
 
     @Test
@@ -201,5 +217,213 @@ public class DocsPlansTest {
                 Files.readAllBytes(REPO_ROOT.resolve(relativePath)),
                 StandardCharsets.UTF_8
         );
+    }
+
+    private static List<String> workflowRunCommands(String workflow) {
+        List<String> runCommands = new ArrayList<>();
+        boolean explicitRunKey = false;
+        for (String rawLine : workflow.split("\\r?\\n")) {
+            String line = stripYamlComment(rawLine);
+            int contentStart = skipSpaces(line, 0);
+            if (contentStart == line.length()) {
+                continue;
+            }
+
+            if (explicitRunKey) {
+                if (line.charAt(contentStart) == ':') {
+                    runCommands.add("run: " + normalizeYamlScalar(line.substring(contentStart + 1)));
+                    explicitRunKey = false;
+                    continue;
+                }
+                explicitRunKey = false;
+            }
+
+            RunMapping blockMapping = parseRunMapping(line, contentStart, true);
+            if (blockMapping != null) {
+                if (blockMapping.explicit) {
+                    explicitRunKey = true;
+                } else {
+                    runCommands.add("run: " + blockMapping.value);
+                }
+            }
+
+            char quote = 0;
+            for (int index = contentStart; index < line.length(); index++) {
+                char current = line.charAt(index);
+                if (quote != 0) {
+                    if (current == quote) {
+                        if (quote == '\'' && index + 1 < line.length()
+                                && line.charAt(index + 1) == '\'') {
+                            index++;
+                        } else if (quote == '"' && index > 0 && line.charAt(index - 1) == '\\') {
+                            continue;
+                        } else {
+                            quote = 0;
+                        }
+                    }
+                    continue;
+                }
+                if (current == '\'' || current == '"') {
+                    quote = current;
+                } else if (current == '{' || current == ',') {
+                    RunMapping flowMapping = parseRunMapping(line, index + 1, false);
+                    if (flowMapping != null) {
+                        runCommands.add("run: " + flowMapping.value);
+                    }
+                }
+            }
+        }
+        return runCommands;
+    }
+
+    private static RunMapping parseRunMapping(String line, int start, boolean allowSequenceMarker) {
+        int index = skipSpaces(line, start);
+        if (allowSequenceMarker && index < line.length() && line.charAt(index) == '-') {
+            index = skipSpaces(line, index + 1);
+        }
+
+        boolean explicit = false;
+        if (allowSequenceMarker && index < line.length() && line.charAt(index) == '?') {
+            explicit = true;
+            index = skipSpaces(line, index + 1);
+        }
+
+        ParsedScalar key = parseYamlScalar(line, index, true);
+        if (key == null || !"run".equals(key.value)) {
+            return null;
+        }
+
+        index = skipSpaces(line, key.end);
+        if (explicit && index == line.length()) {
+            return new RunMapping(true, "");
+        }
+        if (index >= line.length() || line.charAt(index) != ':') {
+            return null;
+        }
+
+        String value = line.substring(index + 1);
+        int flowEnd = findFlowValueEnd(value);
+        return new RunMapping(false, normalizeYamlScalar(value.substring(0, flowEnd)));
+    }
+
+    private static ParsedScalar parseYamlScalar(String line, int start, boolean key) {
+        if (start >= line.length()) {
+            return null;
+        }
+        char first = line.charAt(start);
+        if (first == '\'' || first == '"') {
+            StringBuilder value = new StringBuilder();
+            for (int index = start + 1; index < line.length(); index++) {
+                char current = line.charAt(index);
+                if (current == first) {
+                    if (first == '\'' && index + 1 < line.length()
+                            && line.charAt(index + 1) == '\'') {
+                        value.append('\'');
+                        index++;
+                        continue;
+                    }
+                    return new ParsedScalar(value.toString(), index + 1);
+                }
+                if (first == '"' && current == '\\' && index + 1 < line.length()) {
+                    value.append(line.charAt(++index));
+                } else {
+                    value.append(current);
+                }
+            }
+            return null;
+        }
+
+        int end = start;
+        while (end < line.length()) {
+            char current = line.charAt(end);
+            if (current == ':' || Character.isWhitespace(current)
+                    || current == ',' || current == '}' || current == ']') {
+                break;
+            }
+            end++;
+        }
+        if (end == start || (!key && end != line.length())) {
+            return null;
+        }
+        return new ParsedScalar(line.substring(start, end), end);
+    }
+
+    private static String normalizeYamlScalar(String scalar) {
+        String trimmed = scalar.trim();
+        ParsedScalar parsed = parseYamlScalar(trimmed, 0, false);
+        return parsed == null ? trimmed : parsed.value;
+    }
+
+    private static int findFlowValueEnd(String value) {
+        char quote = 0;
+        for (int index = 0; index < value.length(); index++) {
+            char current = value.charAt(index);
+            if (quote != 0) {
+                if (current == quote) {
+                    if (quote == '\'' && index + 1 < value.length()
+                            && value.charAt(index + 1) == '\'') {
+                        index++;
+                    } else if (quote != '"' || index == 0 || value.charAt(index - 1) != '\\') {
+                        quote = 0;
+                    }
+                }
+            } else if (current == '\'' || current == '"') {
+                quote = current;
+            } else if (current == ',' || current == '}') {
+                return index;
+            }
+        }
+        return value.length();
+    }
+
+    private static String stripYamlComment(String line) {
+        char quote = 0;
+        for (int index = 0; index < line.length(); index++) {
+            char current = line.charAt(index);
+            if (quote != 0) {
+                if (current == quote) {
+                    if (quote == '\'' && index + 1 < line.length()
+                            && line.charAt(index + 1) == '\'') {
+                        index++;
+                    } else if (quote != '"' || index == 0 || line.charAt(index - 1) != '\\') {
+                        quote = 0;
+                    }
+                }
+            } else if (current == '\'' || current == '"') {
+                quote = current;
+            } else if (current == '#'
+                    && (index == 0 || Character.isWhitespace(line.charAt(index - 1)))) {
+                return line.substring(0, index);
+            }
+        }
+        return line;
+    }
+
+    private static int skipSpaces(String value, int start) {
+        int index = start;
+        while (index < value.length() && Character.isWhitespace(value.charAt(index))) {
+            index++;
+        }
+        return index;
+    }
+
+    private static final class ParsedScalar {
+        private final String value;
+        private final int end;
+
+        private ParsedScalar(String value, int end) {
+            this.value = value;
+            this.end = end;
+        }
+    }
+
+    private static final class RunMapping {
+        private final boolean explicit;
+        private final String value;
+
+        private RunMapping(boolean explicit, String value) {
+            this.explicit = explicit;
+            this.value = value;
+        }
     }
 }
