@@ -16,7 +16,8 @@ Priority:
 
 - Preserve the built-in Java HTTP server and `/twiml` plus `/dial-phone` flow
 - Keep account credentials and phone numbers in environment variables
-- Maintain `make check` and Maven packaging for a runnable jar
+- Maintain the sanitized `scripts/run-make.sh check` entrypoint, direct
+  `make check` compatibility, and Maven packaging for a runnable jar
 - Keep a scriptable baseline guard for required files and maintenance metadata
 - Keep local IDE metadata out of the portable sample
 - Keep deployment port parsing predictable and safe for local fallback

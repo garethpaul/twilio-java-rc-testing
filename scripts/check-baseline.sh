@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+ROOT_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 README="$ROOT_DIR/README.md"
 MAKEFILE="$ROOT_DIR/Makefile"
 GITIGNORE="$ROOT_DIR/.gitignore"
@@ -44,6 +44,7 @@ for path in \
   "docs/plans/2026-06-14-supported-toolchain-versions.md" \
   "docs/plans/2026-06-19-live-dial-at-most-once.md" \
   "docs/plans/2026-06-21-make-authority-hardening.md" \
+  "scripts/run-make.sh" \
   "scripts/test-makefile-authority.sh" \
   "scripts/check-baseline.sh"; do
   require_file "$path"
@@ -129,6 +130,24 @@ for authority_contract in \
   'MAKEFILE_LIST must not be overridden'; do
   if ! grep -Fq -- "$authority_contract" "$MAKEFILE"; then
     printf '%s\n' "Makefile is missing authority contract: $authority_contract" >&2
+    exit 1
+  fi
+done
+
+for documented_wrapper_contract in \
+  'scripts/run-make.sh check' \
+  '`MAKEFILES`' \
+  '`MAKEFLAGS`' \
+  '`MFLAGS`' \
+  '`MAKEOVERRIDES`' \
+  '`GNUMAKEFLAGS`' \
+  'earlier or later `-f` files' \
+  'Literal `MVN` values' \
+  'Java environment variables' \
+  '`PATH` remain'; do
+  if ! grep -Fq -- "$documented_wrapper_contract" "$README" && \
+     ! grep -Fq -- "$documented_wrapper_contract" "$ROOT_DIR/SECURITY.md"; then
+    printf '%s\n' "Make wrapper boundary is not documented: $documented_wrapper_contract" >&2
     exit 1
   fi
 done
@@ -267,9 +286,44 @@ fi
 for workflow_contract in \
   "permissions:" \
   "contents: read" \
-  "persist-credentials: false"; do
+  "persist-credentials: false" \
+  "run: ./scripts/run-make.sh check"; do
   if ! grep -Fq -- "$workflow_contract" "$WORKFLOW"; then
     printf '%s\n' "Hosted verification is missing security contract: $workflow_contract" >&2
+    exit 1
+  fi
+done
+
+if [ "$(grep -Fc 'run: ./scripts/run-make.sh check' "$WORKFLOW")" -ne 1 ]; then
+  printf '%s\n' "Hosted verification must use exactly one sanitized Make invocation." >&2
+  exit 1
+fi
+
+if grep -Eq 'run:[[:space:]]+(make|gmake)[[:space:]]' "$WORKFLOW"; then
+  printf '%s\n' "Hosted verification must not invoke Make directly." >&2
+  exit 1
+fi
+
+MAKE_WRAPPER="$ROOT_DIR/scripts/run-make.sh"
+if [ ! -x "$MAKE_WRAPPER" ]; then
+  printf '%s\n' "scripts/run-make.sh must be executable." >&2
+  exit 1
+fi
+
+for wrapper_contract in \
+  'case $0 in' \
+  'if [ "$link_count" -gt 40 ]' \
+  '/usr/bin/readlink -n "$script_path"' \
+  'usage: scripts/run-make.sh check|lint' \
+  'check|lint)' \
+  '-u MAKEFILES' \
+  '-u MAKEFLAGS' \
+  '-u MFLAGS' \
+  '-u MAKEOVERRIDES' \
+  '-u GNUMAKEFLAGS' \
+  '/usr/bin/make --no-print-directory -f "$ROOT/Makefile" "$target"'; do
+  if ! grep -Fq -- "$wrapper_contract" "$MAKE_WRAPPER"; then
+    printf '%s\n' "Make wrapper is missing required contract: $wrapper_contract" >&2
     exit 1
   fi
 done

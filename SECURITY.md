@@ -66,6 +66,14 @@ For web services, APIs, sockets, or scraping workflows, prioritize reports invol
 
 Dependency updates should come from trusted package managers and should keep lockfiles in sync when lockfiles exist. Do not commit credentials, private keys, tokens, generated secrets, or machine-local configuration. If a vulnerability depends on a compromised package, typosquatting risk, insecure transitive dependency, or unsafe build step, include the package name, affected version, and the path through which it is used.
 
+Trusted repository verification starts with `scripts/run-make.sh check`. The
+wrapper resolves its physical checkout, accepts only `check` or `lint`, clears
+GNU Make startup and option variables, and uses fixed system tools before Make
+parses the repository. Direct Make invocation permits caller-controlled
+`MAKEFILES`, earlier or later `-f` files, and `--eval` execution and is not the
+trusted entrypoint. Literal `MVN`, Java environment settings, and `PATH` remain
+caller authority; use a trusted JDK and Maven installation for security claims.
+
 ## Safe Research Guidelines
 
 Good-faith research is welcome when it stays within these boundaries:

@@ -32,4 +32,4 @@ jobs:
           java-version: ${{ matrix.java-version }}
           cache: maven
       - name: Run repository verification
-        run: make check
+        run: ./scripts/run-make.sh check

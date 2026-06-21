@@ -3,6 +3,8 @@
 - Hardened `make check` against Make-syntax Maven expansion, caller shell and
   Makefile identity replacement, execution-skipping flags, and startup-file
   configuration while preserving literal multiword Maven overrides.
+- Added a fixed-target, physical-root Make wrapper for hosted and trusted local
+  verification that clears inherited GNU Make control variables before parse.
 
 ## 2026-06-19
 
