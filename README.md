@@ -101,6 +101,11 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 
 - `make check`
 - `scripts/check-baseline.sh`
+- When invoked with the checked-in Makefile alone, verification protects its
+  repository root and shell, preserves literal multiword Maven overrides, and
+  rejects skipped-mode flags, populated `MAKEFILES`, and `MAKEFILE_LIST`
+  replacement. Startup files and later caller `-f` files remain outside the
+  documented GNU Make trust boundary.
 - `mvn test`
 - GitHub Actions runs `make check` for all branch pushes, pull requests, and
   manual dispatches on Java 8, 11, 17, and 21 with read-only repository
@@ -186,6 +191,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   authentication-first live request boundary.
 - See `docs/plans/2026-06-14-supported-toolchain-versions.md` for the Java,
   Maven, and Twilio SDK support boundary.
+- See `docs/plans/2026-06-21-make-authority-hardening.md` for Maven command,
+  shell, flag, startup-file, and Makefile-identity authority checks.
 
 ## Contributing
 

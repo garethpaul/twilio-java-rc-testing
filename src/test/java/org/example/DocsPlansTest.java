@@ -34,6 +34,8 @@ public class DocsPlansTest {
             DOCS_PLANS.resolve("2026-06-13-strict-dial-form-parsing.md");
     private static final Path SUPPORTED_TOOLCHAIN_VERSIONS_PLAN =
             DOCS_PLANS.resolve("2026-06-14-supported-toolchain-versions.md");
+    private static final Path MAKE_AUTHORITY_PLAN =
+            DOCS_PLANS.resolve("2026-06-21-make-authority-hardening.md");
 
     @Test
     public void canonicalPlanIsCompletedAndVerified() throws IOException {
@@ -64,6 +66,7 @@ public class DocsPlansTest {
                 "supported toolchain versions plan must exist",
                 plans.contains(SUPPORTED_TOOLCHAIN_VERSIONS_PLAN)
         );
+        assertTrue("Make authority plan must exist", plans.contains(MAKE_AUTHORITY_PLAN));
 
         for (Path plan : plans) {
             String text = new String(Files.readAllBytes(plan), StandardCharsets.UTF_8);
@@ -86,15 +89,17 @@ public class DocsPlansTest {
 
         assertTrue(
                 "make check must run the scripted baseline guard from the repository root",
-                makefile.contains("\"$(ROOT)/scripts/check-baseline.sh\"")
+                makefile.contains("\"$$ROOT/scripts/check-baseline.sh\"")
         );
         assertTrue(
                 "ROOT must resist command-line reassignment",
-                makefile.contains("override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))")
+                makefile.contains("override ROOT := $(REPOSITORY_ROOT)")
         );
         assertFalse("ROOT must not depend on the caller's directory", makefile.contains("ROOT := $(CURDIR)"));
         assertTrue("the Maven executable must remain configurable", makefile.contains("MVN ?= mvn"));
-        assertTrue(makefile.contains("cd \"$(ROOT)\" && $(MVN)"));
+        assertTrue(makefile.contains("override MVN := $(value MVN)"));
+        assertTrue(makefile.contains("cd \"$$ROOT\" && $$MVN"));
+        assertTrue(makefile.contains("/bin/sh \"$$ROOT/scripts/test-makefile-authority.sh\""));
     }
 
     @Test

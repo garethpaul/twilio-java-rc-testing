@@ -43,6 +43,8 @@ for path in \
   "docs/plans/2026-06-14-make-root-override-protection.md" \
   "docs/plans/2026-06-14-supported-toolchain-versions.md" \
   "docs/plans/2026-06-19-live-dial-at-most-once.md" \
+  "docs/plans/2026-06-21-make-authority-hardening.md" \
+  "scripts/test-makefile-authority.sh" \
   "scripts/check-baseline.sh"; do
   require_file "$path"
 done
@@ -108,7 +110,7 @@ for plan_contract in \
   fi
 done
 
-make_root='override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))'
+make_root='override ROOT := $(REPOSITORY_ROOT)'
 if ! grep -Fxq -- "$make_root" "$MAKEFILE"; then
   printf '%s\n' "Makefile ROOT must be protected and derived from the loaded Makefile." >&2
   exit 1
@@ -118,6 +120,18 @@ if ! grep -Fxq -- 'MVN ?= mvn' "$MAKEFILE"; then
   printf '%s\n' "Makefile must preserve the Maven command override." >&2
   exit 1
 fi
+
+for authority_contract in \
+  'override MVN := $(value MVN)' \
+  'override SHELL := /bin/sh' \
+  'MAKEFLAGS must not be overridden for repository verification' \
+  'MAKEFILES must be empty; repository verification requires this Makefile to be loaded alone' \
+  'MAKEFILE_LIST must not be overridden'; do
+  if ! grep -Fq -- "$authority_contract" "$MAKEFILE"; then
+    printf '%s\n' "Makefile is missing authority contract: $authority_contract" >&2
+    exit 1
+  fi
+done
 
 for rate_limit_contract in \
   'private static final int MAX_LIVE_DIAL_ATTEMPTS = 5;' \
@@ -311,19 +325,27 @@ for form_content_type_contract in \
   fi
 done
 
-if ! grep -Fq '"$(ROOT)/scripts/check-baseline.sh"' "$MAKEFILE"; then
+if ! grep -Fq '"$$ROOT/scripts/check-baseline.sh"' "$MAKEFILE"; then
   printf '%s\n' "Makefile must run scripts/check-baseline.sh from make check." >&2
   exit 1
 fi
 
 for make_contract in \
-  'ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))' \
-  'cd "$(ROOT)" && $(MVN)'; do
+  '.PHONY: __repository-make-authority build check lint root-test test verify' \
+  'ROOT := $(REPOSITORY_ROOT)' \
+  'cd "$$ROOT" && $$MVN' \
+  '/bin/sh "$$ROOT/scripts/test-makefile-authority.sh"' \
+  'check: root-test verify'; do
   if ! grep -Fq -- "$make_contract" "$MAKEFILE"; then
     printf '%s\n' "Makefile is missing root-independent contract: $make_contract" >&2
     exit 1
   fi
 done
+
+if ! grep -Fq 'docs/plans/2026-06-21-make-authority-hardening.md' "$README"; then
+  printf '%s\n' "README must index Make authority hardening evidence." >&2
+  exit 1
+fi
 
 for target in "lint:" "test:" "build:" "verify:" "check:"; do
   if ! grep -Fq "$target" "$MAKEFILE"; then
