@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertFalse;
@@ -149,7 +150,17 @@ public class DocsPlansTest {
         assertTrue(workflow.contains("workflow_dispatch:"));
         assertTrue(workflow.contains("actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3"));
         assertTrue(workflow.contains("actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.1.0"));
-        assertTrue(workflow.contains("run: make check"));
+        List<String> runCommands = new ArrayList<>();
+        for (String line : workflow.split("\\r?\\n")) {
+            if (line.trim().startsWith("run:")) {
+                runCommands.add(line.trim());
+            }
+        }
+        assertEquals(
+                "workflow must use only the sanitized repository verification command",
+                Collections.singletonList("run: ./scripts/run-make.sh check"),
+                runCommands
+        );
         assertFalse("workflow must not use floating runners", workflow.contains("ubuntu-latest"));
         assertFalse("actions must use immutable commits", workflow.contains("@v"));
         assertFalse("workflow must not grant write permissions", workflow.matches(
