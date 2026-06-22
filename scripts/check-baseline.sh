@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+ROOT_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 README="$ROOT_DIR/README.md"
 MAKEFILE="$ROOT_DIR/Makefile"
 GITIGNORE="$ROOT_DIR/.gitignore"
@@ -43,6 +43,10 @@ for path in \
   "docs/plans/2026-06-14-make-root-override-protection.md" \
   "docs/plans/2026-06-14-supported-toolchain-versions.md" \
   "docs/plans/2026-06-19-live-dial-at-most-once.md" \
+  "docs/plans/2026-06-21-make-authority-hardening.md" \
+  "scripts/run-make.sh" \
+  "scripts/test-makefile-authority.sh" \
+  "scripts/test-workflow-authority.sh" \
   "scripts/check-baseline.sh"; do
   require_file "$path"
 done
@@ -108,7 +112,7 @@ for plan_contract in \
   fi
 done
 
-make_root='override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))'
+make_root='override ROOT := $(REPOSITORY_ROOT)'
 if ! grep -Fxq -- "$make_root" "$MAKEFILE"; then
   printf '%s\n' "Makefile ROOT must be protected and derived from the loaded Makefile." >&2
   exit 1
@@ -118,6 +122,36 @@ if ! grep -Fxq -- 'MVN ?= mvn' "$MAKEFILE"; then
   printf '%s\n' "Makefile must preserve the Maven command override." >&2
   exit 1
 fi
+
+for authority_contract in \
+  'override MVN := $(value MVN)' \
+  'override SHELL := /bin/sh' \
+  'MAKEFLAGS must not be overridden for repository verification' \
+  'MAKEFILES must be empty; repository verification requires this Makefile to be loaded alone' \
+  'MAKEFILE_LIST must not be overridden'; do
+  if ! grep -Fq -- "$authority_contract" "$MAKEFILE"; then
+    printf '%s\n' "Makefile is missing authority contract: $authority_contract" >&2
+    exit 1
+  fi
+done
+
+for documented_wrapper_contract in \
+  'scripts/run-make.sh check' \
+  '`MAKEFILES`' \
+  '`MAKEFLAGS`' \
+  '`MFLAGS`' \
+  '`MAKEOVERRIDES`' \
+  '`GNUMAKEFLAGS`' \
+  'earlier or later `-f` files' \
+  'Literal `MVN` values' \
+  'Java environment variables' \
+  '`PATH` remain'; do
+  if ! grep -Fq -- "$documented_wrapper_contract" "$README" && \
+     ! grep -Fq -- "$documented_wrapper_contract" "$ROOT_DIR/SECURITY.md"; then
+    printf '%s\n' "Make wrapper boundary is not documented: $documented_wrapper_contract" >&2
+    exit 1
+  fi
+done
 
 for rate_limit_contract in \
   'private static final int MAX_LIVE_DIAL_ATTEMPTS = 5;' \
@@ -250,37 +284,45 @@ if [ "$workflow_files" != "$WORKFLOW" ]; then
   exit 1
 fi
 
-for workflow_contract in \
-  "permissions:" \
-  "contents: read" \
-  "persist-credentials: false"; do
-  if ! grep -Fq -- "$workflow_contract" "$WORKFLOW"; then
-    printf '%s\n' "Hosted verification is missing security contract: $workflow_contract" >&2
-    exit 1
-  fi
-done
-
-if grep -Eq '^[[:space:]]*[[:alnum:]_-]+:[[:space:]]*write([[:space:]]|$)' "$WORKFLOW"; then
-  printf '%s\n' "Hosted verification must not grant write permissions." >&2
+EXPECTED_WORKFLOW_SHA256=2e38858f6c84fdcc9f67e5eb05081aacf4ff8e72486e5ec4b338a6eddb273571
+if command -v sha256sum >/dev/null 2>&1; then
+  workflow_sha256=$(sha256sum "$WORKFLOW" | awk '{print $1}')
+elif command -v shasum >/dev/null 2>&1; then
+  workflow_sha256=$(shasum -a 256 "$WORKFLOW" | awk '{print $1}')
+else
+  printf '%s\n' "SHA-256 tool is required to verify the hosted workflow." >&2
+  exit 1
+fi
+if [ "$workflow_sha256" != "$EXPECTED_WORKFLOW_SHA256" ]; then
+  printf '%s\n' "Hosted workflow bytes do not match the reviewed canonical contract." >&2
   exit 1
 fi
 
-if grep -Fq "pull_request_target:" "$WORKFLOW"; then
-  printf '%s\n' "Hosted verification must not run untrusted changes with pull_request_target." >&2
+MAKE_WRAPPER="$ROOT_DIR/scripts/run-make.sh"
+if [ ! -x "$MAKE_WRAPPER" ]; then
+  printf '%s\n' "scripts/run-make.sh must be executable." >&2
   exit 1
 fi
 
-if grep -Fq "branches:" "$WORKFLOW"; then
-  printf '%s\n' "Hosted push verification must cover all branches." >&2
+if [ ! -x "$ROOT_DIR/scripts/test-workflow-authority.sh" ]; then
+  printf '%s\n' "scripts/test-workflow-authority.sh must be executable." >&2
   exit 1
 fi
 
-for event_contract in \
-  "  pull_request:" \
-  "  push:" \
-  "  workflow_dispatch:"; do
-  if ! grep -Fxq -- "$event_contract" "$WORKFLOW"; then
-    printf '%s\n' "Hosted verification is missing canonical event: $event_contract" >&2
+for wrapper_contract in \
+  'case $0 in' \
+  'if [ "$link_count" -gt 40 ]' \
+  '/usr/bin/readlink -n "$script_path"' \
+  'usage: scripts/run-make.sh check|lint' \
+  'check|lint)' \
+  '-u MAKEFILES' \
+  '-u MAKEFLAGS' \
+  '-u MFLAGS' \
+  '-u MAKEOVERRIDES' \
+  '-u GNUMAKEFLAGS' \
+  '/usr/bin/make --no-print-directory -f "$ROOT/Makefile" "$target"'; do
+  if ! grep -Fq -- "$wrapper_contract" "$MAKE_WRAPPER"; then
+    printf '%s\n' "Make wrapper is missing required contract: $wrapper_contract" >&2
     exit 1
   fi
 done
@@ -311,19 +353,28 @@ for form_content_type_contract in \
   fi
 done
 
-if ! grep -Fq '"$(ROOT)/scripts/check-baseline.sh"' "$MAKEFILE"; then
+if ! grep -Fq '"$$ROOT/scripts/check-baseline.sh"' "$MAKEFILE"; then
   printf '%s\n' "Makefile must run scripts/check-baseline.sh from make check." >&2
   exit 1
 fi
 
 for make_contract in \
-  'ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))' \
-  'cd "$(ROOT)" && $(MVN)'; do
+  '.PHONY: __repository-make-authority build check lint root-test test verify' \
+  'ROOT := $(REPOSITORY_ROOT)' \
+  'cd "$$ROOT" && $$MVN' \
+  '/bin/sh "$$ROOT/scripts/test-makefile-authority.sh"' \
+  '/bin/sh "$$ROOT/scripts/test-workflow-authority.sh"' \
+  'check: root-test verify'; do
   if ! grep -Fq -- "$make_contract" "$MAKEFILE"; then
     printf '%s\n' "Makefile is missing root-independent contract: $make_contract" >&2
     exit 1
   fi
 done
+
+if ! grep -Fq 'docs/plans/2026-06-21-make-authority-hardening.md' "$README"; then
+  printf '%s\n' "README must index Make authority hardening evidence." >&2
+  exit 1
+fi
 
 for target in "lint:" "test:" "build:" "verify:" "check:"; do
   if ! grep -Fq "$target" "$MAKEFILE"; then

@@ -99,14 +99,24 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 
 ## Testing and Verification
 
+- `scripts/run-make.sh check`
 - `make check`
 - `scripts/check-baseline.sh`
+- The canonical wrapper accepts exactly `check` or `lint`, resolves its physical
+  checkout through a bounded symbolic-link chain, clears `MAKEFILES`,
+  `MAKEFLAGS`, `MFLAGS`, `MAKEOVERRIDES`, and `GNUMAKEFLAGS`, and invokes the
+  physical repository Makefile with fixed system tools. Literal `MVN` values,
+  Java environment variables, and executable lookup through `PATH` remain
+  caller-controlled so supported local Maven and JDK setups keep working.
+- Direct `make` invocation remains a caller-authority boundary: GNU Make can
+  execute startup files, earlier or later `-f` files, and `--eval` before or
+  outside repository recipes. Use the canonical wrapper for trusted checks.
 - `mvn test`
-- GitHub Actions runs `make check` for all branch pushes, pull requests, and
-  manual dispatches on Java 8, 11, 17, and 21 with read-only repository
+- GitHub Actions runs `scripts/run-make.sh check` for all branch pushes, pull
+  requests, and manual dispatches on Java 8, 11, 17, and 21 with read-only repository
   permissions, non-persisted checkout credentials, Ubuntu 24.04, and immutable
-  action pins. The baseline rejects branch-filtered pushes and additional
-  workflow files.
+  action pins. The baseline requires the complete workflow bytes to match the
+  reviewed canonical SHA-256 and rejects additional workflow files.
 - `mvn -DskipTests package`
 - The baseline script checks required project files, completed docs-plan
   metadata, and local editor metadata hygiene.
@@ -186,6 +196,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   authentication-first live request boundary.
 - See `docs/plans/2026-06-14-supported-toolchain-versions.md` for the Java,
   Maven, and Twilio SDK support boundary.
+- See `docs/plans/2026-06-21-make-authority-hardening.md` for the canonical
+  wrapper, Maven command, shell, flag, startup-file, and Makefile authority.
 
 ## Contributing
 

@@ -1,5 +1,13 @@
 # Changes
 
+- Hardened `make check` against Make-syntax Maven expansion, caller shell and
+  Makefile identity replacement, execution-skipping flags, and startup-file
+  configuration while preserving literal multiword Maven overrides.
+- Added a fixed-target, physical-root Make wrapper for hosted and trusted local
+  verification that clears inherited GNU Make control variables before parse.
+- Replaced permissive workflow command scanning with an exact-byte SHA-256
+  contract and adversarial mutation coverage.
+
 ## 2026-06-19
 
 - Moved live-call rate limiting after form parsing, authorization, and provider
