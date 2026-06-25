@@ -52,9 +52,10 @@ minute, before form parsing or token comparison. This bounds token guessing and
 accidental call volume but is not a distributed control and does not replace
 Twilio account spend limits or deployment-level abuse protection.
 
-The dial form rejects duplicate phone-number or authorization-token fields and
-malformed percent encoding before authorization or provider configuration.
-Unknown fields are ignored, but relevant fields must be unique and decodable.
+The dial form rejects duplicate phone-number or authorization-token fields,
+malformed UTF-8 bytes, and malformed percent encoding before authorization or
+provider configuration. Strict UTF-8 form decoding rejects malformed bytes before unknown-field filtering.
+Unknown well-formed fields are ignored, but relevant fields must be unique and decodable.
 
 HTTP responses use `no-store`, framing denial, a no-referrer policy, a
 restrictive Content Security Policy, and disabled camera/geolocation/microphone

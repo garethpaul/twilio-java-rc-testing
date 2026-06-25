@@ -41,6 +41,7 @@
 ## Safety and gotchas
 
 - Detected references to Twilio. Keep API keys, OAuth credentials, tokens, and account-specific values in local configuration only.
+- Strict UTF-8 form decoding rejects malformed bytes before unknown-field filtering.
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
 - See `docs/plans/2026-06-08-twilio-java-rc-testing-baseline.md` for the canonical dry-run dialing and verification baseline.

@@ -38,6 +38,8 @@ public class DocsPlansTest {
             DOCS_PLANS.resolve("2026-06-14-supported-toolchain-versions.md");
     private static final Path MAKE_AUTHORITY_PLAN =
             DOCS_PLANS.resolve("2026-06-21-make-authority-hardening.md");
+    private static final Path STRICT_FORM_UTF8_PLAN =
+            DOCS_PLANS.resolve("2026-06-25-strict-form-utf8.md");
 
     @Test
     public void canonicalPlanIsCompletedAndVerified() throws IOException {
@@ -69,6 +71,7 @@ public class DocsPlansTest {
                 plans.contains(SUPPORTED_TOOLCHAIN_VERSIONS_PLAN)
         );
         assertTrue("Make authority plan must exist", plans.contains(MAKE_AUTHORITY_PLAN));
+        assertTrue("strict form UTF-8 plan must exist", plans.contains(STRICT_FORM_UTF8_PLAN));
 
         for (Path plan : plans) {
             String text = new String(Files.readAllBytes(plan), StandardCharsets.UTF_8);

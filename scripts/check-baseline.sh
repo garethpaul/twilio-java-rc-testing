@@ -44,6 +44,7 @@ for path in \
   "docs/plans/2026-06-14-supported-toolchain-versions.md" \
   "docs/plans/2026-06-19-live-dial-at-most-once.md" \
   "docs/plans/2026-06-21-make-authority-hardening.md" \
+  "docs/plans/2026-06-25-strict-form-utf8.md" \
   "scripts/run-make.sh" \
   "scripts/test-makefile-authority.sh" \
   "scripts/test-workflow-authority.sh" \
@@ -190,6 +191,9 @@ PY
 
 for strict_form_contract in \
   'private static DialForm parseDialForm(byte[] body) throws InvalidFormException' \
+  'onMalformedInput(CodingErrorAction.REPORT)' \
+  'onUnmappableCharacter(CodingErrorAction.REPORT)' \
+  'catch (CharacterCodingException invalidEncoding)' \
   'String name = decodeFormComponent(parts[0]);' \
   'if (name == null)' \
   'if (!"number".equals(name) && !"dialToken".equals(name) && !"requestId".equals(name))' \
@@ -201,10 +205,19 @@ for strict_form_contract in \
   'throw new InvalidFormException();' \
   'sendResponse(exchange, 400, "text/plain; charset=utf-8", "Invalid form submission.")' \
   'dialPhoneRouteRejectsAmbiguousOrMalformedRelevantFormFields' \
+  'dialPhoneRouteRejectsMalformedUtf8BeforeIgnoringUnknownFields' \
   'dialPhoneRouteIgnoresUnknownFormFields'; do
   if ! grep -Fq -- "$strict_form_contract" "$ROOT_DIR/src/main/java/org/example/Main.java" && \
      ! grep -Fq -- "$strict_form_contract" "$ROOT_DIR/src/test/java/org/example/MainTest.java"; then
     printf '%s\n' "Strict dial form contract is missing: $strict_form_contract" >&2
+    exit 1
+  fi
+done
+
+strict_utf8_guidance='Strict UTF-8 form decoding rejects malformed bytes before unknown-field filtering.'
+for strict_utf8_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
+  if ! grep -Fq -- "$strict_utf8_guidance" "$ROOT_DIR/$strict_utf8_doc"; then
+    printf '%s\n' "$strict_utf8_doc must document strict UTF-8 decoding before unknown-field filtering." >&2
     exit 1
   fi
 done
@@ -236,6 +249,9 @@ unknown = re.search(
 )
 if unknown is None:
     raise SystemExit("Unknown dial form fields must remain ignored.")
+value_decode = body.find("String value = decodeFormComponent(parts[1]);")
+if value_decode < 0 or value_decode > unknown.start():
+    raise SystemExit("Dial form values must be decoded before unknown fields are ignored.")
 PY
 
 for authorization_order_contract in \
