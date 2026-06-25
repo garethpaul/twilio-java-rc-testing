@@ -84,9 +84,11 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   a repeated live request ID before provider access, retains accepted IDs in a
   bounded process-local ledger, and does not retry Twilio call-creation POSTs.
   Connect and response timeouts are five and ten seconds respectively.
-- Duplicate `number`, `dialToken`, or `requestId` fields, malformed pairs, and malformed percent encoding are
+- Duplicate `number`, `dialToken`, or `requestId` fields, malformed pairs,
+  malformed UTF-8 bytes, and malformed percent encoding are
   rejected with a generic `400` before authorization or provider setup; unknown
   form fields remain ignored for browser compatibility.
+- Strict UTF-8 form decoding rejects malformed bytes before unknown-field filtering.
 - `NGROK_URL` must be a valid HTTPS origin URL with a host, without path,
   query, fragment, or userinfo, before the app builds a TwiML callback URL.
 - The `/twiml` route returns TwiML XML with an explicit `application/xml`
@@ -136,7 +138,7 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   exception details.
 - Tests require oversized dial forms to return `413` before parsing or dialing.
 - Tests require one-pass dial-form parsing to reject duplicate relevant fields
-  and malformed percent encoding before authorization or provider setup.
+  and malformed UTF-8 or percent encoding before authorization or provider setup.
 - Tests require `/dial-phone` to accept the exact form media type, including
   case-insensitive parameterized variants, while rejecting missing, unrelated,
   and spoofed-prefix content types with `415`.

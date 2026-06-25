@@ -35,6 +35,7 @@ Priority:
 - Bound live dial attempts before form parsing or authorization checks
 - Reject duplicate or malformed security-relevant dial form fields before
   authorization and provider configuration
+- Strict UTF-8 form decoding rejects malformed bytes before unknown-field filtering.
 - Keep loopback integration coverage around request limits and malformed forms
 - Keep the injectable Twilio call-sender boundary covered by local tests
 - Keep live-call authorization, rate limiting, request-ID deduplication, and

@@ -16,6 +16,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -315,6 +316,47 @@ public class MainTest {
             Main.accountSid = originalAccountSid;
             Main.authToken = originalAuthToken;
             Main.resetLiveDialRateLimit();
+        }
+    }
+
+    @Test
+    public void dialPhoneRouteRejectsMalformedUtf8BeforeIgnoringUnknownFields() throws Exception {
+        String originalNumber = Main.twilioNumber;
+        String originalBaseUrl = Main.NGROK_BASE_URL;
+        String originalSendLive = Main.TWILIO_SEND_LIVE;
+        HttpServer server = Main.startServer(0);
+        try {
+            Main.twilioNumber = "+15551234567";
+            Main.NGROK_BASE_URL = "https://example.ngrok.io";
+            Main.TWILIO_SEND_LIVE = "false";
+            byte[] prefix = "number=%2B15557654321&ignored=".getBytes(StandardCharsets.UTF_8);
+            byte[] body = Arrays.copyOf(prefix, prefix.length + 2);
+            body[prefix.length] = (byte) 0xc3;
+            body[prefix.length + 1] = (byte) 0x28;
+
+            HttpResponse response = requestBytes(
+                    server.getAddress().getPort(),
+                    "POST",
+                    "/dial-phone",
+                    body,
+                    "application/x-www-form-urlencoded; charset=utf-8"
+            );
+            HttpResponse percentEncoded = request(
+                    server.getAddress().getPort(),
+                    "POST",
+                    "/dial-phone",
+                    "number=%2B15557654321&ignored=%C3%28"
+            );
+
+            assertEquals(400, response.status);
+            assertEquals("Invalid form submission.", response.body);
+            assertEquals(400, percentEncoded.status);
+            assertEquals("Invalid form submission.", percentEncoded.body);
+        } finally {
+            server.stop(0);
+            Main.twilioNumber = originalNumber;
+            Main.NGROK_BASE_URL = originalBaseUrl;
+            Main.TWILIO_SEND_LIVE = originalSendLive;
         }
     }
 
@@ -942,14 +984,29 @@ public class MainTest {
             String body,
             String contentType
     ) throws Exception {
+        return requestBytes(
+                port,
+                method,
+                path,
+                body == null ? null : body.getBytes(StandardCharsets.UTF_8),
+                contentType
+        );
+    }
+
+    private static HttpResponse requestBytes(
+            int port,
+            String method,
+            String path,
+            byte[] bodyBytes,
+            String contentType
+    ) throws Exception {
         HttpURLConnection connection = (HttpURLConnection) new URL(
                 "http://127.0.0.1:" + port + path
         ).openConnection();
         connection.setRequestMethod(method);
         connection.setConnectTimeout(LOOPBACK_TIMEOUT_MILLIS);
         connection.setReadTimeout(LOOPBACK_TIMEOUT_MILLIS);
-        if (body != null) {
-            byte[] bodyBytes = body.getBytes(StandardCharsets.UTF_8);
+        if (bodyBytes != null) {
             connection.setDoOutput(true);
             if (contentType != null) {
                 connection.setRequestProperty("Content-Type", contentType);

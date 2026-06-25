@@ -1,5 +1,39 @@
 # Changes
 
+## 2026-06-25 08:15 PDT - P2 - Reject malformed UTF-8 form bytes
+
+### Summary
+The dial route now rejects malformed raw UTF-8 before parsing or ignoring form fields.
+
+### Work completed
+- Added a loopback integration test proving raw and percent-encoded malformed UTF-8 in an unknown field previously returned a successful dry run.
+- Switched the bounded request body to a reporting UTF-8 decoder before form tokenization.
+- Added baseline and documentation contracts for the fail-closed decoding boundary.
+
+### Threads
+- None; work completed directly in this maintenance cycle.
+
+### Files changed
+- `Main.java` and `MainTest.java` — strict decoding and route-level regression coverage.
+- `scripts/`, maintained docs, and `docs/plans/` — portable contracts and evidence.
+
+### Validation
+- Focused malformed-UTF-8 integration test — failed with HTTP 200 before the fix and passed with HTTP 400 afterward.
+- Full repository and external-directory `make check` — passed with 53 tests on Maven 3.6.3 and Java 21.
+- Hostile permissive-decoder mutation — rejected by the canonical baseline.
+- Codex review found and drove closure of the percent-encoded malformed UTF-8 path before merge.
+
+### Bugs / findings
+- P2: Java's replacement-character decoding allowed malformed raw UTF-8 in ignored fields to bypass strict form rejection.
+
+### Blockers
+- None.
+
+### Next action
+- Open the PR, run Codex review, and merge only after hosted checks pass.
+
+Strict UTF-8 form decoding rejects malformed bytes before unknown-field filtering.
+
 - Hardened `make check` against Make-syntax Maven expansion, caller shell and
   Makefile identity replacement, execution-skipping flags, and startup-file
   configuration while preserving literal multiword Maven overrides.

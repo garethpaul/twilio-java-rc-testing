@@ -23,7 +23,9 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLDecoder;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -444,7 +446,16 @@ public class Main {
     }
 
     private static DialForm parseDialForm(byte[] body) throws InvalidFormException {
-        String form = new String(body, StandardCharsets.UTF_8);
+        String form;
+        try {
+            form = StandardCharsets.UTF_8.newDecoder()
+                    .onMalformedInput(CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(CodingErrorAction.REPORT)
+                    .decode(ByteBuffer.wrap(body))
+                    .toString();
+        } catch (CharacterCodingException invalidEncoding) {
+            throw new InvalidFormException();
+        }
         String phoneNumber = null;
         String dialToken = null;
         String requestId = null;
@@ -457,12 +468,12 @@ public class Main {
             if (name == null) {
                 throw new InvalidFormException();
             }
-            if (!"number".equals(name) && !"dialToken".equals(name) && !"requestId".equals(name)) {
-                continue;
-            }
             String value = decodeFormComponent(parts[1]);
             if (value == null) {
                 throw new InvalidFormException();
+            }
+            if (!"number".equals(name) && !"dialToken".equals(name) && !"requestId".equals(name)) {
+                continue;
             }
             if ("number".equals(name)) {
                 if (phoneNumber != null) {
@@ -496,11 +507,42 @@ public class Main {
     }
 
     private static String decodeFormComponent(String value) {
-        try {
-            return URLDecoder.decode(value, StandardCharsets.UTF_8.name());
-        } catch (IllegalArgumentException | IOException invalidEncoding) {
-            return null;
+        StringBuilder decoded = new StringBuilder();
+        for (int index = 0; index < value.length();) {
+            char character = value.charAt(index);
+            if (character == '+') {
+                decoded.append(' ');
+                index++;
+                continue;
+            }
+            if (character != '%') {
+                decoded.append(character);
+                index++;
+                continue;
+            }
+            ByteArrayOutputStream escapedBytes = new ByteArrayOutputStream();
+            while (index < value.length() && value.charAt(index) == '%') {
+                if (index + 2 >= value.length()) {
+                    return null;
+                }
+                int high = Character.digit(value.charAt(index + 1), 16);
+                int low = Character.digit(value.charAt(index + 2), 16);
+                if (high < 0 || low < 0) {
+                    return null;
+                }
+                escapedBytes.write((high << 4) + low);
+                index += 3;
+            }
+            try {
+                decoded.append(StandardCharsets.UTF_8.newDecoder()
+                        .onMalformedInput(CodingErrorAction.REPORT)
+                        .onUnmappableCharacter(CodingErrorAction.REPORT)
+                        .decode(ByteBuffer.wrap(escapedBytes.toByteArray())));
+            } catch (CharacterCodingException invalidEncoding) {
+                return null;
+            }
         }
+        return decoded.toString();
     }
 
     private static void sendResponse(
