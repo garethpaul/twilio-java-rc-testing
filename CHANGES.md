@@ -1,5 +1,62 @@
 # Changes
 
+## 2026-06-26 12:28 PDT - P1 - Preserve live-call quota across clock rollback
+
+### Summary
+Kept the process-local authorized live dial quota fail closed when the wall
+clock moves backward, and corrected stale security documentation that still
+claimed unauthorized requests consumed quota.
+
+### Work completed
+- Added a red-first limiter regression covering exhausted quota, backward time,
+  the original expiry boundary, and recovery after a full minute.
+- Replaced rollback-as-reset behavior with a conservative elapsed-window check
+  that also treats signed subtraction overflow as elapsed.
+- Corrected README, security, vision, and maintainer guidance: rate limiting is
+  enforced after strict parsing, exact authorization, and provider validation,
+  so it bounds authorized call volume rather than token guessing.
+- Extended static contracts and added a completed implementation plan.
+
+### Threads
+- Started: live dial clock rollback — direct implementation.
+- Continued: continuous open-source maintenance loop.
+- Stopped: none.
+
+### Files changed
+- `src/main/java/org/example/Main.java` — fail-closed fixed-window expiry.
+- `src/test/java/org/example/MainTest.java` — backward-clock regression.
+- `scripts/check-baseline.sh` — source, test, plan, and documentation contracts.
+- `README.md`, `SECURITY.md`, `VISION.md`, `AGENTS.md` — accurate quota scope.
+- `docs/plans/2026-06-26-live-dial-clock-rollback.md` — completed plan.
+- `CHANGES.md` — this cycle record.
+
+### Validation
+- Red JUnit test — the third acquisition at an earlier timestamp was accepted
+  before the fix and is now rejected.
+- Maven 3.9.11 / Java 21 `make check` — Make authority, nine workflow
+  mutations, compile, 55 JUnit tests, package, and scripted baseline passed.
+- Three isolated hostile mutations — rollback reset, missing regression
+  contract, and restored stale public guidance all failed closed.
+- Runtime dependency-tree resolution and `git diff --check` passed.
+- Hosted runs `28260295480` and `28260297600` passed Java 8, 11, 17, and 21.
+- CodeQL run `28260296292` passed Actions and Java/Kotlin analysis; the
+  aggregate CodeQL check and Snyk PR check also passed.
+- `codex review --base origin/main` was attempted on exact head `75d5c00` but
+  OpenAI authentication returned HTTP 401 before analysis; immutable manual
+  diff review found no accepted or actionable findings.
+
+### Bugs / findings
+- P1: A backward wall-clock adjustment cleared exhausted authorized-call quota.
+- P1: Public guidance incorrectly claimed the authorization-first limiter
+  bounded online token guessing and ran before form parsing.
+
+### Blockers
+- None. Tests use an injected clock and fake call sender; no live call occurs.
+
+### Next action
+- Run the full Maven gate and hostile mutations, then require exact-head hosted
+  checks and review before merge.
+
 ## 2026-06-25 23:52 PDT - P2 - Close debug-log redaction roadmap item
 
 ### Summary

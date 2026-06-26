@@ -642,8 +642,7 @@ public class Main {
 
         synchronized boolean tryAcquire(long nowMillis) {
             if (windowStartedAt == Long.MIN_VALUE
-                    || nowMillis < windowStartedAt
-                    || nowMillis - windowStartedAt >= windowMillis) {
+                    || windowElapsed(nowMillis)) {
                 windowStartedAt = nowMillis;
                 attempts = 0;
             }
@@ -652,6 +651,14 @@ public class Main {
             }
             attempts++;
             return true;
+        }
+
+        private boolean windowElapsed(long nowMillis) {
+            if (nowMillis < windowStartedAt) {
+                return false;
+            }
+            long elapsedMillis = nowMillis - windowStartedAt;
+            return elapsedMillis < 0L || elapsedMillis >= windowMillis;
         }
 
         synchronized void reset() {
