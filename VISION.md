@@ -49,10 +49,12 @@ Priority:
   restrictive browser security policy
 - Keep TwiML callback responses explicit and testable
 - Keep checked-in runtime logging at info by default
+- Keep debug diagnostics allowlisted, locally scoped, and redacted before
+  sharing
 
 Next priorities:
 
-- Add explicit debug-log redaction guidance
+- No additional roadmap item is currently queued.
 
 Contribution rules:
 

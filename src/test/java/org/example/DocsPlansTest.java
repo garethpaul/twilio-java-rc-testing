@@ -40,6 +40,8 @@ public class DocsPlansTest {
             DOCS_PLANS.resolve("2026-06-21-make-authority-hardening.md");
     private static final Path STRICT_FORM_UTF8_PLAN =
             DOCS_PLANS.resolve("2026-06-25-strict-form-utf8.md");
+    private static final Path DEBUG_LOG_REDACTION_PLAN =
+            DOCS_PLANS.resolve("2026-06-25-debug-log-redaction.md");
 
     @Test
     public void canonicalPlanIsCompletedAndVerified() throws IOException {
@@ -72,6 +74,7 @@ public class DocsPlansTest {
         );
         assertTrue("Make authority plan must exist", plans.contains(MAKE_AUTHORITY_PLAN));
         assertTrue("strict form UTF-8 plan must exist", plans.contains(STRICT_FORM_UTF8_PLAN));
+        assertTrue("debug-log redaction plan must exist", plans.contains(DEBUG_LOG_REDACTION_PLAN));
 
         for (Path plan : plans) {
             String text = new String(Files.readAllBytes(plan), StandardCharsets.UTF_8);
@@ -188,6 +191,24 @@ public class DocsPlansTest {
         assertTrue(pom.contains("<artifactId>twilio</artifactId>"));
         assertTrue(pom.contains("<version>12.1.1</version>"));
         assertTrue(workflow.contains("java-version: [\"8\", \"11\", \"17\", \"21\"]"));
+    }
+
+    @Test
+    public void debugLogSharingGuidanceRemainsFailClosed() throws IOException {
+        String guide = read("docs/debug-log-redaction.md");
+        String readme = read("README.md");
+        String security = read("SECURITY.md");
+
+        assertTrue(guide.contains("Never log or share"));
+        assertTrue(guide.contains("TWILIO_AUTH_TOKEN"));
+        assertTrue(guide.contains("TWILIO_DIAL_TOKEN"));
+        assertTrue(guide.contains("request bodies"));
+        assertTrue(guide.contains("phone numbers"));
+        assertTrue(guide.contains("Call SID"));
+        assertTrue(guide.contains("Rotate credentials"));
+        assertTrue(guide.contains("dry-run mode"));
+        assertTrue(readme.contains("docs/debug-log-redaction.md"));
+        assertTrue(security.contains("docs/debug-log-redaction.md"));
     }
 
     @Test

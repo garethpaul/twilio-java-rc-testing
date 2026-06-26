@@ -97,7 +97,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   unused browser capabilities, and applies a restrictive Content Security
   Policy that permits only the existing Bootstrap stylesheet origin.
 - Runtime logging defaults to `info`; switch to debug only in a local working
-  copy when you are prepared to redact call metadata before sharing logs.
+  copy and follow [`docs/debug-log-redaction.md`](docs/debug-log-redaction.md)
+  before sharing any diagnostic output.
 
 ## Testing and Verification
 
@@ -200,6 +201,9 @@ When the required SDK or runtime is unavailable, use static checks and source re
   Maven, and Twilio SDK support boundary.
 - See `docs/plans/2026-06-21-make-authority-hardening.md` for the canonical
   wrapper, Maven command, shell, flag, startup-file, and Makefile authority.
+- See `docs/debug-log-redaction.md` and
+  `docs/plans/2026-06-25-debug-log-redaction.md` for the fail-closed diagnostic
+  sharing checklist and its executable repository contract.
 
 ## Contributing
 
