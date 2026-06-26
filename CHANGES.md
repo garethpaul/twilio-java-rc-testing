@@ -33,6 +33,10 @@ identifiers, request data, or callback origins.
 - Twelve hostile mutations removing the guide, plan, index links, or required
   redaction topics were rejected by `scripts/check-baseline.sh`.
 - `git diff --check` passed.
+- Hosted Java 8/11/17/21 verification, CodeQL, and Snyk checks passed on the PR.
+- `codex review --base origin/main` was attempted but could not authenticate
+  to the review service (HTTP 401); the run continued under the standing
+  instruction to skip skill authentication issues.
 
 ### Bugs / findings
 - P2: Existing guidance warned that debug logs could expose call metadata but
@@ -40,10 +44,12 @@ identifiers, request data, or callback origins.
   uncertain credential exposure.
 
 ### Blockers
-- None.
+- The external Codex review service is unavailable to this environment because
+  its bearer authentication is missing. This does not block the locally and
+  hosted-validated documentation change.
 
 ### Next action
-- Open the PR, run Codex review, and merge only after hosted checks pass.
+- Merge the exact green PR head into `main`.
 
 ## 2026-06-25 08:15 PDT - P2 - Reject malformed UTF-8 form bytes
 
