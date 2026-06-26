@@ -32,7 +32,8 @@ Priority:
 - Keep outbound calls in dry-run mode unless explicitly enabled
 - Require per-request authorization before any live dial attempt
 - Authorize live requests before disclosing provider configuration details
-- Bound live dial attempts before form parsing or authorization checks
+- Bound the authorized live dial quota after parsing and authorization, and
+  preserve it across backward wall-clock adjustments
 - Reject duplicate or malformed security-relevant dial form fields before
   authorization and provider configuration
 - Strict UTF-8 form decoding rejects malformed bytes before unknown-field filtering.

@@ -556,6 +556,17 @@ public class MainTest {
     }
 
     @Test
+    public void liveDialRateLimiterDoesNotResetWhenClockMovesBackward() {
+        Main.LiveDialRateLimiter limiter = new Main.LiveDialRateLimiter(2, 60_000L);
+
+        assertTrue(limiter.tryAcquire(1_000L));
+        assertTrue(limiter.tryAcquire(1_000L));
+        assertFalse(limiter.tryAcquire(999L));
+        assertFalse(limiter.tryAcquire(60_999L));
+        assertTrue(limiter.tryAcquire(61_000L));
+    }
+
+    @Test
     public void liveDialRouteRateLimitsOnlyAfterParsingAndAuthorization() throws Exception {
         String originalNumber = Main.twilioNumber;
         String originalBaseUrl = Main.NGROK_BASE_URL;

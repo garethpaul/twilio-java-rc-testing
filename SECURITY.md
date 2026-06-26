@@ -47,10 +47,13 @@ Live `/dial-phone` requests require the separately configured
 `TWILIO_DIAL_TOKEN`. Use a high-entropy value, do not place it in URLs or source
 control, and rotate it if a submitted form or request log may have exposed it.
 
-The sample also permits at most five live dial attempts per process each
-minute, before form parsing or token comparison. This bounds token guessing and
-accidental call volume but is not a distributed control and does not replace
-Twilio account spend limits or deployment-level abuse protection.
+The sample also permits at most five fully validated live dial attempts per
+process each minute after exact token authorization and provider configuration
+validation. The authorized live dial quota is not consumed by unauthorized
+requests, so it bounds accidental or automated call volume but does not bound
+online token guessing. Backward wall-clock adjustments fail closed instead of
+resetting quota. This is not a distributed control and does not replace Twilio
+account spend limits or deployment-level abuse protection.
 
 The dial form rejects duplicate phone-number or authorization-token fields,
 malformed UTF-8 bytes, and malformed percent encoding before authorization or

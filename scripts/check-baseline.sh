@@ -47,6 +47,7 @@ for path in \
   "docs/plans/2026-06-21-make-authority-hardening.md" \
   "docs/plans/2026-06-25-strict-form-utf8.md" \
   "docs/plans/2026-06-25-debug-log-redaction.md" \
+  "docs/plans/2026-06-26-live-dial-clock-rollback.md" \
   "scripts/run-make.sh" \
   "scripts/test-makefile-authority.sh" \
   "scripts/test-workflow-authority.sh" \
@@ -185,12 +186,40 @@ for rate_limit_contract in \
   'exchange.getResponseHeaders().set("Retry-After", "60")' \
   'new HttpResult(429, "Too many live dial attempts.")' \
   'liveDialRateLimiterAllowsFiveAttemptsAndResetsAfterOneMinute' \
+  'liveDialRateLimiterDoesNotResetWhenClockMovesBackward' \
+  'if (nowMillis < windowStartedAt)' \
+  'return elapsedMillis < 0L || elapsedMillis >= windowMillis;' \
   'liveDialRouteRateLimitsOnlyAfterParsingAndAuthorization' \
   'unauthorizedLiveDialRequestsDoNotConsumeTheAuthorizedRateLimit' \
   'dryRunRouteIgnoresExhaustedLiveDialRateLimit'; do
   if ! grep -Fq -- "$rate_limit_contract" "$ROOT_DIR/src/main/java/org/example/Main.java" && \
      ! grep -Fq -- "$rate_limit_contract" "$ROOT_DIR/src/test/java/org/example/MainTest.java"; then
     printf '%s\n' "Live dial rate-limit contract is missing: $rate_limit_contract" >&2
+    exit 1
+  fi
+done
+
+for rate_limit_doc in "$README" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR/VISION.md" "$ROOT_DIR/CHANGES.md"; do
+  if ! grep -Fq -- "authorized live dial quota" "$rate_limit_doc"; then
+    printf '%s\n' "$rate_limit_doc must document the authorized live dial quota." >&2
+    exit 1
+  fi
+done
+
+for stale_rate_limit_claim in \
+  'before form parsing or token comparison' \
+  'This bounds token guessing' \
+  'Bound live dial attempts before form parsing or authorization checks'; do
+  if grep -Fq -- "$stale_rate_limit_claim" "$README" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR/VISION.md"; then
+    printf '%s\n' "Public guidance retains a stale rate-limit claim: $stale_rate_limit_claim" >&2
+    exit 1
+  fi
+done
+
+ROLLBACK_PLAN="$ROOT_DIR/docs/plans/2026-06-26-live-dial-clock-rollback.md"
+for rollback_contract in 'Status: Completed' 'clock moves backward' 'hostile mutations'; do
+  if ! grep -Fq -- "$rollback_contract" "$ROLLBACK_PLAN"; then
+    printf '%s\n' "Live dial clock-rollback plan is missing evidence: $rollback_contract" >&2
     exit 1
   fi
 done
