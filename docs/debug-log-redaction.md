@@ -78,4 +78,3 @@ credential.
 - [Secure your Twilio credentials](https://www.twilio.com/docs/usage/secure-credentials)
 - [Twilio security guidance](https://www.twilio.com/docs/usage/security)
 - [Twilio Auth Tokens and how to change them](https://help.twilio.com/articles/223136027)
-

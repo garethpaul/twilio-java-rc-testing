@@ -34,4 +34,3 @@ make safe local troubleshooting and log sharing explicit.
 - `scripts/check-baseline.sh` fails when the guide, plan, index links, or
   required redaction topics are absent.
 - `make check` verifies the complete Maven and repository baseline.
-
