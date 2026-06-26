@@ -30,6 +30,7 @@ for path in \
   "src/main/java/org/example/Main.java" \
   "src/test/java/org/example/DocsPlansTest.java" \
   "src/test/java/org/example/MainTest.java" \
+  "docs/debug-log-redaction.md" \
   "docs/plans/2026-06-08-twilio-java-rc-testing-baseline.md" \
   "docs/plans/2026-06-09-scripted-baseline-check.md" \
   "docs/plans/2026-06-10-dependencies-and-ci.md" \
@@ -45,11 +46,34 @@ for path in \
   "docs/plans/2026-06-19-live-dial-at-most-once.md" \
   "docs/plans/2026-06-21-make-authority-hardening.md" \
   "docs/plans/2026-06-25-strict-form-utf8.md" \
+  "docs/plans/2026-06-25-debug-log-redaction.md" \
   "scripts/run-make.sh" \
   "scripts/test-makefile-authority.sh" \
   "scripts/test-workflow-authority.sh" \
   "scripts/check-baseline.sh"; do
   require_file "$path"
+done
+
+for debug_log_contract in \
+  'Never log or share' \
+  'TWILIO_AUTH_TOKEN' \
+  'TWILIO_DIAL_TOKEN' \
+  'request bodies' \
+  'phone numbers' \
+  'Call SID' \
+  'Rotate credentials' \
+  'dry-run mode'; do
+  if ! grep -Fq -- "$debug_log_contract" "$ROOT_DIR/docs/debug-log-redaction.md"; then
+    printf '%s\n' "Debug-log redaction guidance is missing: $debug_log_contract" >&2
+    exit 1
+  fi
+done
+
+for debug_log_index in README.md SECURITY.md; do
+  if ! grep -Fq 'docs/debug-log-redaction.md' "$ROOT_DIR/$debug_log_index"; then
+    printf '%s\n' "$debug_log_index must index debug-log redaction guidance." >&2
+    exit 1
+  fi
 done
 
 for loopback_timeout_contract in \

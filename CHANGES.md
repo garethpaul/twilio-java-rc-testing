@@ -1,5 +1,50 @@
 # Changes
 
+## 2026-06-25 23:52 PDT - P2 - Close debug-log redaction roadmap item
+
+### Summary
+Operators now have a fail-closed checklist for collecting and sharing local
+diagnostics without exposing Twilio credentials, phone numbers, provider
+identifiers, request data, or callback origins.
+
+### Work completed
+- Added an allowlist-first debug-log guide with explicit forbidden fields,
+  sanitized examples, pre-sharing review steps, and credential-rotation action.
+- Linked the guide from runtime and security documentation and closed the final
+  queued roadmap item.
+- Added JUnit and shell contracts requiring the guide, completed plan, index
+  links, and security-critical topics.
+
+### Threads
+- None; work completed directly in this maintenance cycle.
+
+### Files changed
+- `docs/debug-log-redaction.md` and `docs/plans/2026-06-25-debug-log-redaction.md`
+  — operator guidance and completed implementation evidence.
+- `README.md`, `SECURITY.md`, `VISION.md`, and `CHANGES.md` — discoverability,
+  security posture, roadmap state, and cycle record.
+- `DocsPlansTest.java` and `scripts/check-baseline.sh` — fail-closed contracts.
+
+### Validation
+- Red phase: `scripts/check-baseline.sh` rejected the missing guide before the
+  documentation was added.
+- `MVN=/tmp/apache-maven-3.6.3/bin/mvn scripts/run-make.sh check` passed with
+  54 tests on Java 21 and the documented Maven 3.6.3 baseline.
+- Twelve hostile mutations removing the guide, plan, index links, or required
+  redaction topics were rejected by `scripts/check-baseline.sh`.
+- `git diff --check` passed.
+
+### Bugs / findings
+- P2: Existing guidance warned that debug logs could expose call metadata but
+  did not define what to remove, what was safe to retain, or how to respond to
+  uncertain credential exposure.
+
+### Blockers
+- None.
+
+### Next action
+- Open the PR, run Codex review, and merge only after hosted checks pass.
+
 ## 2026-06-25 08:15 PDT - P2 - Reject malformed UTF-8 form bytes
 
 ### Summary

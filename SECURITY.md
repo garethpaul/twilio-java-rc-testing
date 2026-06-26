@@ -57,6 +57,11 @@ malformed UTF-8 bytes, and malformed percent encoding before authorization or
 provider configuration. Strict UTF-8 form decoding rejects malformed bytes before unknown-field filtering.
 Unknown well-formed fields are ignored, but relevant fields must be unique and decodable.
 
+Checked-in logging stays at `info`. Before enabling local diagnostics or
+sharing any log excerpt, follow [`docs/debug-log-redaction.md`](docs/debug-log-redaction.md).
+It treats credentials, request bodies, phone numbers, Twilio identifiers,
+callback origins, and unreviewed provider exceptions as non-shareable data.
+
 HTTP responses use `no-store`, framing denial, a no-referrer policy, a
 restrictive Content Security Policy, and disabled camera/geolocation/microphone
 capabilities. Keep these controls aligned with any future UI asset changes.
