@@ -187,6 +187,7 @@ for rate_limit_contract in \
   'new HttpResult(429, "Too many live dial attempts.")' \
   'liveDialRateLimiterAllowsFiveAttemptsAndResetsAfterOneMinute' \
   'liveDialRateLimiterDoesNotResetWhenClockMovesBackward' \
+  'configuredLiveDialGateEnforcesTheOneMinuteWindowItWasBuiltWith' \
   'if (nowMillis < windowStartedAt)' \
   'return elapsedMillis < 0L || elapsedMillis >= windowMillis;' \
   'liveDialRouteRateLimitsOnlyAfterParsingAndAuthorization' \

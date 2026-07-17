@@ -618,6 +618,68 @@ public class MainTest {
         }
     }
 
+    private static Main.HttpResult configuredGateLiveDial(int attempt) {
+        return Main.dialPhone(
+                "+15557654321",
+                "dial-secret",
+                String.format("00000000-0000-0000-0000-%012d", attempt),
+                (to, from, callbackUri) -> { }
+        );
+    }
+
+    @Test
+    public void configuredLiveDialGateEnforcesTheOneMinuteWindowItWasBuiltWith() {
+        String originalNumber = Main.twilioNumber;
+        String originalBaseUrl = Main.NGROK_BASE_URL;
+        String originalSendLive = Main.TWILIO_SEND_LIVE;
+        String originalDialToken = Main.TWILIO_DIAL_TOKEN;
+        String originalAccountSid = Main.accountSid;
+        String originalAuthToken = Main.authToken;
+        Main.resetLiveDialRateLimit();
+        long[] now = {1_000L};
+        Main.currentTimeMillis = () -> now[0];
+        try {
+            Main.twilioNumber = "+15551234567";
+            Main.NGROK_BASE_URL = "https://example.ngrok.io";
+            Main.TWILIO_SEND_LIVE = "true";
+            Main.TWILIO_DIAL_TOKEN = "dial-secret";
+            Main.accountSid = "AC00000000000000000000000000000000";
+            Main.authToken = "00000000000000000000000000000000";
+
+            for (int attempt = 0; attempt < 5; attempt++) {
+                assertEquals(200, configuredGateLiveDial(attempt).status);
+            }
+            assertEquals(429, configuredGateLiveDial(5).status);
+
+            // Observe the window the shared gate was actually constructed with,
+            // rather than the source text of LIVE_DIAL_WINDOW_MILLIS: a shortened
+            // window would reset the quota here and stop bounding live dialing.
+            now[0] = 60_999L;
+            assertEquals(
+                    "Live dial quota must still bound attempts one millisecond before the window elapses.",
+                    429,
+                    configuredGateLiveDial(6).status
+            );
+
+            // A lengthened window would leave the quota exhausted here, contradicting
+            // the advertised Retry-After: 60 contract.
+            now[0] = 61_000L;
+            assertEquals(
+                    "Live dial quota must reset after exactly one minute.",
+                    200,
+                    configuredGateLiveDial(7).status
+            );
+        } finally {
+            Main.twilioNumber = originalNumber;
+            Main.NGROK_BASE_URL = originalBaseUrl;
+            Main.TWILIO_SEND_LIVE = originalSendLive;
+            Main.TWILIO_DIAL_TOKEN = originalDialToken;
+            Main.accountSid = originalAccountSid;
+            Main.authToken = originalAuthToken;
+            Main.resetLiveDialRateLimit();
+        }
+    }
+
     @Test
     public void unauthorizedLiveDialRequestsDoNotConsumeTheAuthorizedRateLimit() throws Exception {
         String originalNumber = Main.twilioNumber;
